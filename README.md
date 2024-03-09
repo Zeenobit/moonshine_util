@@ -32,7 +32,7 @@ fn bad_system(mut commands: Commands) {
 
 fn unsafe_system(mut query: Query<(&A, &B)>) {
     for (a, b) in query.iter() {
-        // A instance of `A` does exist, but this system skips over it silently!
+        // An instance of `A` does exist, but this system skips over it silently!
     }
 }
 
