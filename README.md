@@ -49,7 +49,7 @@ A convenient [`SystemParam`](https://docs.rs/bevy/latest/bevy/ecs/system/trait.S
 
 ```rust
 use bevy::prelude::*;
-use moonshine_util::hierarchy_query::HierarchyQuery;
+use moonshine_util::hierarchy::HierarchyQuery;
 
 #[derive(Component)]
 struct Needle;
