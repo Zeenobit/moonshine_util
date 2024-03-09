@@ -1,0 +1,13 @@
+[package]
+name = "moonshine-util"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy_ecs = "0.13.*"
+bevy_hierarchy = "0.13.*"
+
+[dev-dependencies]
+bevy = "0.13.*"
