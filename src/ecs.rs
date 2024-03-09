@@ -1,10 +1,24 @@
 use bevy_ecs::prelude::*;
 
-/// A trait similar to [`bevy_ecs::system::RunSystemOnce`], except it runs a system multiple times.
+/// A trait similar to [`bevy_ecs::system::RunSystemOnce`], but it runs a system multiple times.
 ///
 /// This is useful for testing multiple iterations of a system.
 pub trait RunSystemLoop: Sized {
-    /// Runs a system `n` times, returning a vector of the outputs.
+    /// Runs a system `n` times, returning a [`Vec`] of the outputs.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy::prelude::*;
+    /// use moonshine_util::ecs::RunSystemLoop;
+    ///
+    /// let mut world = World::new();
+    /// let entities = world.run_system_loop(3, |mut commands: Commands| {
+    ///     commands.spawn_empty();
+    /// });
+    ///
+    /// assert_eq!(entities.len(), 3);
+    /// assert_eq!(world.iter_entities().count(), 3);
+    /// ```
     fn run_system_loop<T: IntoSystem<(), Out, Marker>, Out, Marker>(
         self,
         n: usize,
@@ -13,7 +27,25 @@ pub trait RunSystemLoop: Sized {
         self.run_system_loop_with(n, || (), system)
     }
 
-    /// Runs a system `n` times with the given input, returning a vector of the outputs.
+    /// Runs a system `n` times with the given input source, returning a [`Vec`] of the outputs.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy::prelude::*;
+    /// use moonshine_util::ecs::RunSystemLoop;
+    ///
+    /// let mut world = World::new();
+    /// let mut names = vec!["Alice", "Bob", "Charlie"];
+    /// let entities = world.run_system_loop_with(
+    ///     3,
+    ///     || names.pop().unwrap().to_owned(),
+    ///     |In(name): In<String>, mut commands: Commands| {
+    ///         commands.spawn(Name::new(name));
+    ///     });
+    ///
+    /// assert_eq!(entities.len(), 3);
+    /// assert_eq!(world.query::<&Name>().iter(&mut world).count(), 3);
+    /// ```
     fn run_system_loop_with<InputSource, T: IntoSystem<In, Out, Marker>, In, Out, Marker>(
         self,
         n: usize,
@@ -21,18 +53,18 @@ pub trait RunSystemLoop: Sized {
         system: T,
     ) -> Vec<Out>
     where
-        InputSource: Fn() -> In;
+        InputSource: FnMut() -> In;
 }
 
 impl RunSystemLoop for &mut World {
     fn run_system_loop_with<InputSource, T: IntoSystem<In, Out, Marker>, In, Out, Marker>(
         self,
         n: usize,
-        input: InputSource,
+        mut input: InputSource,
         system: T,
     ) -> Vec<Out>
     where
-        InputSource: Fn() -> In,
+        InputSource: FnMut() -> In,
     {
         let mut system: T::System = IntoSystem::into_system(system);
         system.initialize(self);
