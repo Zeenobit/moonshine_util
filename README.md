@@ -99,7 +99,7 @@ A trait similar to [`RunSystemOnce`](https://docs.rs/bevy/latest/bevy/ecs/system
 
 ```rust
 use bevy::prelude::*;
-use moonshine_util::ecs::RunSystemLoop;
+use moonshine_util::diagnostics::RunSystemLoop;
 
 let mut world = World::new();
 let outputs = world.run_system_loop(2, |mut commands: Commands| {

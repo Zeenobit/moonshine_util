@@ -9,7 +9,7 @@ pub trait RunSystemLoop: Sized {
     /// # Example
     /// ```
     /// use bevy::prelude::*;
-    /// use moonshine_util::ecs::RunSystemLoop;
+    /// use moonshine_util::diagnostics::RunSystemLoop;
     ///
     /// let mut world = World::new();
     /// let entities = world.run_system_loop(3, |mut commands: Commands| {
@@ -32,7 +32,7 @@ pub trait RunSystemLoop: Sized {
     /// # Example
     /// ```
     /// use bevy::prelude::*;
-    /// use moonshine_util::ecs::RunSystemLoop;
+    /// use moonshine_util::diagnostics::RunSystemLoop;
     ///
     /// let mut world = World::new();
     /// let mut names = vec!["Alice", "Bob", "Charlie"];
