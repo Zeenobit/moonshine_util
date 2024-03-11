@@ -1,5 +1,5 @@
 #![doc = include_str!("../README.md")]
 
-pub mod ecs;
+pub mod diagnostics;
 pub mod expect;
 pub mod hierarchy;
