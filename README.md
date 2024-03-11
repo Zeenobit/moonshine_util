@@ -80,18 +80,20 @@ fn find_needle(
 
 Some useful functions include:
 
-- `fn parent(&self, entity: Entity) -> Option<Entity>`
-- `fn has_parent(&self, entity: Entity) -> bool`
-- `fn children(&self, entity: Entity) -> impl Iterator<Item = Entity>`
-- `fn has_children(&self, entity: Entity) -> bool`
-- `fn root(&self, entity: Entity) -> Entity`
-- `fn is_root(&self, entity: Entity) -> bool`
-- `fn ancestors(&self, entity: Entity) -> impl Iterator<Item = Entity>`
-- `fn descendants(&self, entity: Entity) -> impl Iterator<Item = Entity>`
-- `fn is_ancestor_of(&self, entity: Entity, descendant: Entity) -> bool`
-- `fn is_descendant_of(&self, entity: Entity, ancestor: Entity) -> bool`
-- `fn find_ancestor<T, F>(&self, entity: Entity, query: &Query<T, F>) -> Option<QueryItem<T>`
-- `fn find_descendant<T, F>(&self, entity: Entity, query: &Query<T, F>) -> Option<QueryItem<T>`
+- `fn parent(&self, Entity) -> Option<Entity>`
+- `fn has_parent(&self, Entity) -> bool`
+- `fn children(&self, Entity) -> Iterator<Item = Entity>`
+- `fn has_children(&self, Entity) -> bool`
+- `fn root(&self, Entity) -> Entity`
+- `fn is_root(&self, Entity) -> bool`
+- `fn ancestors(&self, Entity) -> Iterator<Item = Entity>`
+- `fn descendants(&self, Entity) -> Iterator<Item = Entity>`
+- `fn is_ancestor_of(&self, Entity, Entity) -> bool`
+- `fn is_descendant_of(&self, Entity, Entity) -> bool`
+- `fn find_ancestor<T, F>(&self, Entity, &Query<T, F>) -> Option<QueryItem<T>>`
+- `fn find_descendant<T, F>(&self, Entity, &Query<T, F>) -> Option<QueryItem<T>>`
+
+See code documentation for complete details.
 
 ### `RunSystemLoop`
 
@@ -111,3 +113,14 @@ assert_eq!(outputs.len(), 2);
 assert!(world.get_entity(outputs[0]).is_some());
 assert!(world.get_entity(outputs[1]).is_some());
 ```
+
+### Utility Systems
+
+A collection of simple and generic systems useful for constructing larger system pipelines:
+
+- `has_event<T: Event>() -> bool`
+- `has_resource<T: Resource>() -> bool`
+- `remove_resource<T: Resource>(Commands)`
+- `remove_resource_immediate<T: Resource>(&mut World)`
+
+See code documentation for usage examples.
