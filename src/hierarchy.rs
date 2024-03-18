@@ -49,13 +49,11 @@ pub struct HierarchyQuery<'w, 's> {
 
 impl<'w, 's> HierarchyQuery<'w, 's> {
     /// Returns the parent of the given entity, if it has one.
-    #[must_use]
     pub fn parent(&self, entity: Entity) -> Option<Entity> {
         self.parent.get(entity).ok().map(|parent| **parent)
     }
 
     /// Returns true if the given entity has a parent.
-    #[must_use]
     pub fn has_parent(&self, entity: Entity) -> bool {
         self.parent(entity).is_some()
     }
@@ -70,7 +68,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns true if the given entity has children.
-    #[must_use]
     pub fn has_children(&self, entity: Entity) -> bool {
         self.children
             .get(entity)
@@ -80,7 +77,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns the root of the given entity's hierarchy.
-    #[must_use]
     pub fn root(&self, entity: Entity) -> Entity {
         let mut root = entity;
         while let Some(parent) = self.parent(root) {
@@ -90,7 +86,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns true if the given `entity` is the root of its hierarchy.
-    #[must_use]
     pub fn is_root(&self, entity: Entity) -> bool {
         self.parent(entity).is_none()
     }
@@ -106,19 +101,16 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns true if given `entity` is an ancestor of the given `descendant`.
-    #[must_use]
     pub fn is_ancestor_of(&self, entity: Entity, descendant: Entity) -> bool {
         self.ancestors(descendant).any(|parent| parent == entity)
     }
 
     /// Returns true if given `entity` is a descendant of the given `ancestor`.
-    #[must_use]
     pub fn is_descendant_of(&self, entity: Entity, ancestor: Entity) -> bool {
         self.ancestors(entity).any(|parent| parent == ancestor)
     }
 
     /// Returns the first ancestor of the given `entity` that matches the given `query`.
-    #[must_use]
     pub fn find_ancestor<'a, T: ReadOnlyQueryData, F: QueryFilter>(
         &self,
         entity: Entity,
@@ -129,7 +121,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns the first ancestor of the given `entity` that matches the given mutable `query`.
-    #[must_use]
     pub fn find_ancestor_mut<'a, T: QueryData, F: QueryFilter>(
         &self,
         mut entity: Entity,
@@ -145,7 +136,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
     }
 
     /// Returns the first descendant of the given `entity` that matches the given `query`.
-    #[must_use]
     pub fn find_descendant<'a, T: ReadOnlyQueryData, F: QueryFilter>(
         &self,
         entity: Entity,
