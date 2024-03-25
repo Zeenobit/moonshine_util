@@ -105,6 +105,11 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
         self.ancestors(descendant).any(|parent| parent == entity)
     }
 
+    /// Returns true if given `entity` is a child of the given `parent`.
+    pub fn is_child_of(&self, entity: Entity, parent: Entity) -> bool {
+        self.parent(entity).map(|p| p == parent).unwrap_or(false)
+    }
+
     /// Returns true if given `entity` is a descendant of the given `ancestor`.
     pub fn is_descendant_of(&self, entity: Entity, ancestor: Entity) -> bool {
         self.ancestors(entity).any(|parent| parent == ancestor)
