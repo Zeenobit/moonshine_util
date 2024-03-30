@@ -134,10 +134,18 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
         entity: Entity,
         table_row: TableRow,
     ) -> Self::Item<'w> {
-        fetch
+        let item = fetch
             .matches
-            .then(|| T::fetch(&mut fetch.fetch, entity, table_row))
-            .expect("unexpected query error")
+            .then(|| T::fetch(&mut fetch.fetch, entity, table_row));
+        if let Some(item) = item {
+            item
+        } else {
+            panic!(
+                "expected query of type `{}` does not match entity {:?}",
+                std::any::type_name::<T>(),
+                entity
+            );
+        }
     }
 
     fn update_component_access(state: &T::State, access: &mut FilteredAccess<ComponentId>) {
