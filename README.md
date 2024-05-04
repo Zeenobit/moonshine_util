@@ -1,16 +1,18 @@
 # 🛠️ Moonshine Utilities
 
 [![crates.io](https://img.shields.io/crates/v/moonshine-util)](https://crates.io/crates/moonshine-util)
+[![downloads](https://img.shields.io/crates/dr/moonshine-util?label=downloads)](https://crates.io/crates/moonshine-util)
 [![docs.rs](https://docs.rs/moonshine-util/badge.svg)](https://docs.rs/moonshine-util)
 [![license](https://img.shields.io/crates/l/moonshine-util)](https://github.com/Zeenobit/moonshine_util/blob/main/LICENSE)
+[![stars](https://img.shields.io/github/stars/Zeenobit/moonshine_util)](https://github.com/Zeenobit/moonshine_util)
 
-A collection of utilities for [Bevy](https://github.com/bevyengine/bevy) game engine.
+Collection of utilities for [Bevy](https://github.com/bevyengine/bevy).
 
 ## Features
 
 ### `Expect<T>`
 
-A [`QueryData`](https://docs.rs/bevy/latest/bevy/ecs/query/trait.QueryData.html) "decorator" which panics if it doesn't match.
+A decorator for [`QueryData`](https://docs.rs/bevy/latest/bevy/ecs/query/trait.QueryData.html) which panics if it doesn't match.
 
 This helps avoid silent failures in systems due to missing components:
 
@@ -62,7 +64,7 @@ struct Needle;
 struct Haystack;
 
 fn spawn_haystack(mut commands: Commands) {
-    // A very complex hierarchy ...
+    // A complex hierarchy ...
     commands.spawn(Haystack).with_children(|x| {
         x.spawn_empty().with_children(|y| {
             y.spawn_empty().with_children(|z| {
@@ -78,7 +80,9 @@ fn find_needle(
     hierarchy: HierarchyQuery
 ) {
     let haystack = haystack.single();
-    let needle = hierarchy.find_descendant(haystack, &needle_query);
+    if let Some(needle) = hierarchy.find_descendant(haystack, &needle_query) {
+        // ...
+    }
 }
 ```
 
@@ -128,3 +132,9 @@ A collection of simple and generic systems useful for constructing larger system
 - `remove_resource_immediate<T: Resource>(&mut World)`
 
 See code documentation for usage examples.
+
+## Support
+
+Please [post an issue](https://github.com/Zeenobit/moonshine_util/issues/new) for any bugs, questions, or suggestions.
+
+You may also contact me on the official [Bevy Discord](https://discord.gg/bevy) server as **@Zeenobit**.
