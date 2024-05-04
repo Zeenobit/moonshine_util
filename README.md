@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/moonshine-util)](https://crates.io/crates/moonshine-util)
 [![docs.rs](https://docs.rs/moonshine-util/badge.svg)](https://docs.rs/moonshine-util)
-[![license](https://img.shields.io/crates/l/moonshine-util)](
+[![license](https://img.shields.io/crates/l/moonshine-util)](https://github.com/Zeenobit/moonshine_util/blob/main/LICENSE)
 
 A collection of utilities for [Bevy](https://github.com/bevyengine/bevy) game engine.
 
