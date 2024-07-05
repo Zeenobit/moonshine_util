@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use bevy_ecs::{
     archetype::Archetype,
-    component::{ComponentId, Tick},
+    component::{ComponentId, Components, Tick},
     prelude::*,
     query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery},
     storage::{Table, TableRow},
@@ -154,8 +154,8 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
         access.extend_access(&intermediate);
     }
 
-    fn get_state(world: &World) -> Option<Self::State> {
-        T::get_state(world)
+    fn get_state(components: &Components) -> Option<Self::State> {
+        T::get_state(components)
     }
 
     fn init_state(world: &mut World) -> T::State {

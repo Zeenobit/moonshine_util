@@ -66,7 +66,7 @@ pub fn has_event<T: Event>(events: EventReader<T>) -> bool {
 /// app.add_systems(Update, remove_resource::<R>.run_if(has_resource::<R>));
 /// app.update(); // Resource is removed from the world.
 ///
-/// assert!(!app.world.contains_resource::<R>());
+/// assert!(!app.world().contains_resource::<R>());
 /// ```
 pub fn remove_resource<T: Resource>(mut commands: Commands) {
     commands.remove_resource::<T>();
@@ -88,7 +88,7 @@ pub fn remove_resource<T: Resource>(mut commands: Commands) {
 /// app.add_systems(Update, remove_resource_immediate::<R>.run_if(has_resource::<R>));
 /// app.update(); // Resource is removed from the world.
 ///
-/// assert!(!app.world.contains_resource::<R>());
+/// assert!(!app.world().contains_resource::<R>());
 /// ```
 pub fn remove_resource_immediate<T: Resource>(world: &mut World) {
     world.remove_resource::<T>();

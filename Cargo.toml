@@ -1,6 +1,6 @@
 [package]
 name = "moonshine-util"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 license = "MIT"
 description = "Collection of utilities for Bevy"
@@ -11,8 +11,8 @@ homepage = "https://github.com/Zeenobit/moonshine_util"
 repository = "https://github.com/Zeenobit/moonshine_util"
 
 [dependencies]
-bevy_ecs = "0.13.*"
-bevy_hierarchy = "0.13.*"
+bevy_ecs = "0.14.*"
+bevy_hierarchy = "0.14.*"
 
 [dev-dependencies]
-bevy = "0.13.*"
+bevy = "0.14.*"
