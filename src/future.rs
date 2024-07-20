@@ -99,6 +99,10 @@ impl<T> Default for Promise<T> {
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
 impl<T> Future<T> {
+    pub fn expired() -> Self {
+        Self(Arc::new(Mutex::new(Expired)))
+    }
+
     pub fn new(promise: &Promise<T>) -> Self {
         Self(promise.0.clone())
     }
@@ -112,6 +116,12 @@ impl<T> Future<T> {
             return Expired;
         }
         std::mem::replace(&mut *value, Expired)
+    }
+}
+
+impl<T> Default for Future<T> {
+    fn default() -> Self {
+        Self::expired()
     }
 }
 
