@@ -108,7 +108,9 @@ impl<T> Future<T> {
     }
 
     pub fn poll(&self) -> FutureValue<T> {
-        let mut value = self.0.lock().unwrap();
+        let Ok(mut value) = self.0.try_lock() else {
+            return Wait;
+        };
         if matches!(*value, Wait) {
             return Wait;
         }
