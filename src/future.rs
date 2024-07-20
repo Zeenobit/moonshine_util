@@ -8,10 +8,8 @@ impl<T> Promise<T> {
         Self(Arc::new(Mutex::new(None)))
     }
 
-    pub fn take(&mut self) -> Promise<T> {
-        let arc = Arc::clone(&self.0);
-        self.0 = Default::default();
-        Self(arc)
+    pub fn take(&self) -> Promise<T> {
+        Self(Arc::new(Mutex::new(self.0.lock().unwrap().take())))
     }
 
     pub fn done(self, value: T) {
