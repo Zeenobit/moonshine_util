@@ -1,5 +1,77 @@
 use std::sync::{Arc, Mutex};
 
+/// A value that will be written to in the future.
+///
+/// # Usage
+///
+/// This type is designed to work with the [`Future`] type. It is a simplified implementation of
+/// the [`std::future::Future`] pattern specifically design for use in Bevy ECS.
+///
+/// # Example
+///
+/// ```
+/// use moonshine_util::future::*;
+///
+/// let promise = Promise::new();
+/// let future = Future::new(&promise);
+///
+/// assert_eq!(future.poll(), Wait);
+///
+/// promise.set(42);
+///
+/// assert_eq!(future.poll(), Ready(42));
+/// assert_eq!(future.poll(), Expired);
+/// ```
+///
+/// This simple pattern can be used to synchronize data between systems:
+///
+/// ```
+/// use bevy::prelude::*;
+/// use moonshine_util::future::*;
+///
+/// #[derive(Component)]
+/// struct Add(u32, u32, Promise<u32>);
+///
+/// fn add(query: Query<(Entity, &Add)>, mut commands: Commands) {
+///     for (entity, Add(a, b, promise)) in query.iter() {
+///         promise.set(a + b);
+///
+///         // Typically, this would be done to ensure we don't set the promise twice:
+///         commands.entity(entity).remove::<Add>();
+///     }
+/// }
+///
+/// #[derive(Component)]
+/// struct AddResult(Future<u32>);
+///
+/// fn request_add(mut commands: Commands) {
+///     let promise = Promise::new();
+///     let future = Future::new(&promise);
+///     commands.spawn(Add(2, 2, promise));
+///     commands.spawn(AddResult(future));
+/// }
+///
+/// fn process_add_result(query: Query<(Entity, &AddResult)>, mut commands: Commands) {
+///     for (entity, AddResult(future)) in query.iter() {
+///         match future.poll() {
+///             Ready(result) => {
+///                 println!("2 + 2 = {}", result);
+///
+///                 // Ensure future is not polled again:
+///                 commands.entity(entity).remove::<AddResult>();
+///             },
+///             Wait => {
+///                 continue;
+///             },
+///             _ => {
+///                 // If the future is used correctly, this case should never happen.
+///                 // Do *NOT* poll the future again after it returns ready.
+///                 unreachable!();
+///             },
+///         }
+///     }
+/// }
+/// ```
 #[must_use]
 pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
@@ -20,6 +92,9 @@ impl<T> Default for Promise<T> {
     }
 }
 
+/// A value that will be read from in the future, when ready.
+///
+/// See [`Promise`] for more usage information and examples.
 #[must_use]
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
