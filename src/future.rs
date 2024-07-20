@@ -1,25 +1,16 @@
 use std::sync::{Arc, Mutex};
 
 #[must_use]
-pub struct Promise<T>(Mutex<Option<Arc<Mutex<FutureValue<T>>>>>);
+pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
 impl<T> Promise<T> {
     pub fn new() -> Self {
-        Self(Mutex::new(Some(Arc::new(Mutex::new(FutureValue::Wait)))))
+        Self(Arc::new(Mutex::new(Wait)))
     }
 
-    pub fn take(&self) -> Promise<T> {
-        let arc = self.0.lock().unwrap().take().expect("promise is expired");
-        Self(Mutex::new(Some(arc)))
-    }
-
-    pub fn done(self, value: T) {
-        let arc = self.0.lock().unwrap().take().expect("promise is expired");
-        *arc.lock().unwrap() = FutureValue::Ready(value);
-    }
-
-    pub fn is_expired(&self) -> bool {
-        self.0.lock().unwrap().is_none()
+    pub fn set(&self, value: T) {
+        let mut future = self.0.lock().unwrap();
+        *future = Ready(value);
     }
 }
 
@@ -34,51 +25,48 @@ pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
 impl<T> Future<T> {
     pub fn new(promise: &Promise<T>) -> Self {
-        Self(
-            promise
-                .0
-                .lock()
-                .unwrap()
-                .clone()
-                .expect("promise is expired"),
-        )
+        Self(promise.0.clone())
     }
 
-    pub fn poll(&self) -> Option<T> {
+    pub fn poll(&self) -> FutureValue<T> {
         let mut value = self.0.lock().unwrap();
-
-        if matches!(*value, FutureValue::Expired) {
-            panic!("future is expired");
+        if matches!(*value, Wait) {
+            return Wait;
         }
-
-        if matches!(*value, FutureValue::Wait) {
-            return None;
+        if matches!(*value, Expired) {
+            return Expired;
         }
+        std::mem::replace(&mut *value, Expired)
+    }
+}
 
-        let value = std::mem::replace(&mut *value, FutureValue::Expired);
-        if let FutureValue::Ready(value) = value {
-            Some(value)
-        } else {
-            unreachable!()
-        }
+#[must_use]
+#[derive(Debug, PartialEq)]
+pub enum FutureValue<T> {
+    Wait,
+    Ready(T),
+    Expired,
+}
+
+impl<T> FutureValue<T> {
+    pub fn is_ready(&self) -> bool {
+        matches!(self, Ready(_))
     }
 
     pub fn is_expired(&self) -> bool {
-        matches!(*self.0.lock().unwrap(), FutureValue::Expired)
+        matches!(self, Expired)
+    }
+
+    pub fn unwrap(self) -> T {
+        if let Ready(value) = self {
+            value
+        } else {
+            panic!("future is not ready")
+        }
     }
 }
 
-impl<T> Clone for Future<T> {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
-
-enum FutureValue<T> {
-    Wait,
-    Expired,
-    Ready(T),
-}
+pub use FutureValue::{Expired, Ready, Wait};
 
 #[cfg(test)]
 mod test {
@@ -101,13 +89,28 @@ mod test {
         w.spawn(Server(p));
         w.spawn(Client(f));
 
-        assert!(w.run_system_once(move |q: Query<&Client>| { q.single().0.poll().is_none() }));
-        assert!(w.run_system_once(move |q: Query<&Client>| { q.single().0.poll().is_none() }));
+        assert_eq!(
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            Wait
+        );
+        assert_eq!(
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            Wait
+        );
 
-        w.run_system_once(move |q: Query<&Server>| q.single().0.take().done(()));
+        w.run_system_once(move |q: Query<(Entity, &Server)>, mut commands: Commands| {
+            let (entity, server) = q.single();
+            server.0.set(());
+            commands.entity(entity).remove::<Server>();
+        });
 
-        assert!(w.run_system_once(move |q: Query<&Server>| { q.single().0.is_expired() }));
-        assert!(w.run_system_once(move |q: Query<&Client>| { q.single().0.poll().is_some() }));
-        assert!(w.run_system_once(move |q: Query<&Client>| { q.single().0.is_expired() }));
+        assert_eq!(
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            Ready(())
+        );
+        assert_eq!(
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            Expired
+        );
     }
 }
