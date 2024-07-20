@@ -9,6 +9,7 @@ impl<T> Promise<T> {
     }
 
     pub fn take(&self) -> Promise<T> {
+        debug_assert_eq!(Arc::<Mutex<Option<T>>>::strong_count(&self.0), 1);
         Self(Arc::new(Mutex::new(self.0.lock().unwrap().take())))
     }
 
