@@ -42,6 +42,12 @@ impl<T> Future<T> {
     }
 }
 
+impl<T> Clone for Future<T> {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
 pub enum FutureResponse<T> {
     Wait(Future<T>),
     Done(T),
