@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 ///
 /// # Usage
 ///
-/// This type is designed to work with the [`Future`] type. It is a simplified implementation of
+/// This type is designed to work with [`Future`]. It is a very simplified implementation of
 /// the [`std::future::Future`] pattern specifically design for use in Bevy ECS.
 ///
 /// # Example
@@ -23,7 +23,7 @@ use std::sync::{Arc, Mutex};
 /// assert_eq!(future.poll(), Expired);
 /// ```
 ///
-/// This simple pattern can be used to synchronize data between systems:
+/// This pattern can be used to synchronize data between systems:
 ///
 /// ```
 /// use bevy::prelude::*;
@@ -71,21 +71,31 @@ use std::sync::{Arc, Mutex};
 ///         }
 ///     }
 /// }
+///
+/// # bevy_ecs::system::assert_is_system(add);
+/// # bevy_ecs::system::assert_is_system(request_add);
+/// # bevy_ecs::system::assert_is_system(process_add_result);
 /// ```
 #[must_use]
 pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
 impl<T> Promise<T> {
+    /// Creates a new promise.
+    ///
+    /// See [`Promise::start()`] for a more convenient way to create a promise and its associated future.
     pub fn new() -> Self {
         Self(Arc::new(Mutex::new(Wait)))
     }
 
+    /// Creates a new promise and its associated future.
     pub fn start() -> (Self, Future<T>) {
         let promise = Self::new();
         let future = Future::new(&promise);
         (promise, future)
     }
 
+    /// Sets the promised future value.
+    /// This will notify the associated [`Future`] that it is [`Ready`].
     pub fn set(&self, value: T) {
         let mut future = self.0.lock().unwrap();
         *future = Ready(value);
@@ -105,14 +115,26 @@ impl<T> Default for Promise<T> {
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
 impl<T> Future<T> {
+    /// Creates a new future that is already expired.
     pub fn expired() -> Self {
         Self(Arc::new(Mutex::new(Expired)))
     }
 
+    /// Creates a new future associated with a given [`Promise`].
     pub fn new(promise: &Promise<T>) -> Self {
         Self(promise.0.clone())
     }
 
+    /// Polls the future for its value.
+    ///
+    /// # Usage
+    ///
+    /// This function may return one of three values:
+    ///
+    /// 1. If the promised value is ready, this will return [`Ready`] and the future will be expired.
+    /// 2. If the promised value is not ready yet, this will return [`Wait`].
+    /// 3. If this future is expired, this will return [`Expired`].
+    ///    You should not handle this case explicitly, and instead avoid polling the future twice.
     pub fn poll(&self) -> FutureValue<T> {
         let Ok(mut value) = self.0.try_lock() else {
             return Wait;
