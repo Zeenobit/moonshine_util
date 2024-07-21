@@ -80,6 +80,12 @@ impl<T> Promise<T> {
         Self(Arc::new(Mutex::new(Wait)))
     }
 
+    pub fn start() -> (Self, Future<T>) {
+        let promise = Self::new();
+        let future = Future::new(&promise);
+        (promise, future)
+    }
+
     pub fn set(&self, value: T) {
         let mut future = self.0.lock().unwrap();
         *future = Ready(value);
