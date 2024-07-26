@@ -147,6 +147,8 @@ impl<T> Future<T> {
         }
         std::mem::replace(&mut *value, Expired)
     }
+
+    pub fn forget(self) {}
 }
 
 impl<T> Default for Future<T> {
