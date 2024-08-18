@@ -11,7 +11,6 @@ homepage = "https://github.com/Zeenobit/moonshine_util"
 repository = "https://github.com/Zeenobit/moonshine_util"
 
 [dependencies]
-bevy_app = "0.14.*"
 bevy_ecs = "0.14.*"
 bevy_hierarchy = "0.14.*"
 
