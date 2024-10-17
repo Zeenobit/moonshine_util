@@ -1,8 +1,4 @@
-use bevy_ecs::{
-    prelude::*,
-    query::{QueryData, QueryFilter, QueryItem, ReadOnlyQueryData},
-    system::SystemParam,
-};
+use bevy_ecs::{prelude::*, system::SystemParam};
 use bevy_hierarchy::prelude::*;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
@@ -53,12 +49,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
         self.parent.get(entity).ok().map(|parent| **parent)
     }
 
-    #[deprecated]
-    /// Returns true if the given entity has a parent.
-    pub fn has_parent(&self, entity: Entity) -> bool {
-        self.parent(entity).is_some()
-    }
-
     /// Iterates over the children of the given entity.
     pub fn children(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.children
@@ -68,41 +58,9 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
             .flat_map(|children| children.into_iter().copied())
     }
 
-    #[deprecated]
-    /// Returns true if the given entity has children.
-    pub fn has_children(&self, entity: Entity) -> bool {
-        self.children
-            .get(entity)
-            .ok()
-            .map(|children| !children.is_empty())
-            .unwrap_or(false)
-    }
-
-    #[deprecated]
-    /// Returns the root of the given entity's hierarchy.
-    pub fn root(&self, entity: Entity) -> Entity {
-        let mut root = entity;
-        while let Some(parent) = self.parent(root) {
-            root = parent;
-        }
-        root
-    }
-
-    #[deprecated]
-    /// Returns true if the given `entity` is the root of its hierarchy.
-    pub fn is_root(&self, entity: Entity) -> bool {
-        self.parent(entity).is_none()
-    }
-
     /// Iterates over the ancestors of the given `entity`.
     pub fn ancestors(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.parent.iter_ancestors(entity)
-    }
-
-    #[deprecated(note = "use `descendants_wide` instead")]
-    /// Iterates over the descendants of the given `entity`.
-    pub fn descendants(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
-        self.descendants_wide(entity)
     }
 
     /// Iterates over the descendants of the given `entity`.
@@ -112,62 +70,6 @@ impl<'w, 's> HierarchyQuery<'w, 's> {
 
     pub fn descendants_deep(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         DeepDescendantIter::new(&self.children, entity)
-    }
-
-    #[deprecated]
-    /// Returns true if given `entity` is an ancestor of the given `descendant`.
-    pub fn is_ancestor_of(&self, entity: Entity, descendant: Entity) -> bool {
-        self.ancestors(descendant).any(|parent| parent == entity)
-    }
-
-    #[deprecated]
-    /// Returns true if given `entity` is a child of the given `parent`.
-    pub fn is_child_of(&self, entity: Entity, parent: Entity) -> bool {
-        self.parent(entity).map(|p| p == parent).unwrap_or(false)
-    }
-
-    #[deprecated]
-    /// Returns true if given `entity` is a descendant of the given `ancestor`.
-    pub fn is_descendant_of(&self, entity: Entity, ancestor: Entity) -> bool {
-        self.ancestors(entity).any(|parent| parent == ancestor)
-    }
-
-    #[deprecated]
-    /// Returns the first ancestor of the given `entity` that matches the given `query`.
-    pub fn find_ancestor<'a, T: ReadOnlyQueryData, F: QueryFilter>(
-        &self,
-        entity: Entity,
-        query: &'a Query<T, F>,
-    ) -> Option<QueryItem<'a, T::ReadOnly>> {
-        self.ancestors(entity)
-            .find_map(|ancestor| query.get(ancestor).ok())
-    }
-
-    #[deprecated]
-    /// Returns the first ancestor of the given `entity` that matches the given mutable `query`.
-    pub fn find_ancestor_mut<'a, T: QueryData, F: QueryFilter>(
-        &self,
-        mut entity: Entity,
-        query: &'a mut Query<T, F>,
-    ) -> Option<QueryItem<'a, T>> {
-        while let Some(parent) = self.parent(entity) {
-            if query.get(parent).is_ok() {
-                return Some(query.get_mut(parent).unwrap());
-            }
-            entity = parent;
-        }
-        None
-    }
-
-    #[deprecated]
-    /// Returns the first descendant of the given `entity` that matches the given `query`.
-    pub fn find_descendant<'a, T: ReadOnlyQueryData, F: QueryFilter>(
-        &self,
-        entity: Entity,
-        query: &'a Query<T, F>,
-    ) -> Option<QueryItem<'a, T::ReadOnly>> {
-        self.descendants_wide(entity)
-            .find_map(|descendant| query.get(descendant).ok())
     }
 }
 
