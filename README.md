@@ -80,7 +80,7 @@ fn find_needle(
     hierarchy: HierarchyQuery
 ) {
     let haystack = haystack.single();
-    if let Some(needle) = hierarchy.find_descendant(haystack, &needle_query) {
+    for needle in hierarchy.descendants_deep(haystack) {
         // ...
     }
 }
@@ -118,8 +118,8 @@ let outputs = world.run_system_loop(2, |mut commands: Commands| {
 
 assert_eq!(outputs.len(), 2);
 
-assert!(world.get_entity(outputs[0]).is_some());
-assert!(world.get_entity(outputs[1]).is_some());
+assert!(world.get_entity(outputs[0]).is_ok());
+assert!(world.get_entity(outputs[1]).is_ok());
 ```
 
 ### Utility Systems

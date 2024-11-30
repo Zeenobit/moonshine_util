@@ -46,25 +46,37 @@ pub trait RunSystemLoop: Sized {
     /// assert_eq!(entities.len(), 3);
     /// assert_eq!(world.query::<&Name>().iter(&mut world).count(), 3);
     /// ```
-    fn run_system_loop_with<InputSource, T: IntoSystem<In, Out, Marker>, In, Out, Marker>(
+    fn run_system_loop_with<
+        InputSource,
+        T: IntoSystem<I, Out, Marker>,
+        I: SystemInput,
+        Out,
+        Marker,
+    >(
         self,
         n: usize,
         input: InputSource,
         system: T,
     ) -> Vec<Out>
     where
-        InputSource: FnMut() -> In;
+        InputSource: FnMut() -> I::Inner<'static>;
 }
 
 impl RunSystemLoop for &mut World {
-    fn run_system_loop_with<InputSource, T: IntoSystem<In, Out, Marker>, In, Out, Marker>(
+    fn run_system_loop_with<
+        InputSource,
+        T: IntoSystem<I, Out, Marker>,
+        I: SystemInput,
+        Out,
+        Marker,
+    >(
         self,
         n: usize,
         mut input: InputSource,
         system: T,
     ) -> Vec<Out>
     where
-        InputSource: FnMut() -> In,
+        InputSource: FnMut() -> I::Inner<'static>,
     {
         let mut system: T::System = IntoSystem::into_system(system);
         system.initialize(self);

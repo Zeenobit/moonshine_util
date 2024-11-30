@@ -207,11 +207,13 @@ mod test {
         w.spawn(Client(f));
 
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+                .unwrap(),
             Wait
         );
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+                .unwrap(),
             Wait
         );
 
@@ -219,14 +221,17 @@ mod test {
             let (entity, server) = q.single();
             server.0.set(());
             commands.entity(entity).remove::<Server>();
-        });
+        })
+        .unwrap();
 
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+                .unwrap(),
             Ready(())
         );
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() }),
+            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+                .unwrap(),
             Expired
         );
     }

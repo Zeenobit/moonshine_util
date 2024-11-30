@@ -2,48 +2,13 @@ use bevy_ecs::{prelude::*, system::SystemParam};
 use bevy_hierarchy::prelude::*;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
-///
-/// # Example
-/// ```
-/// use bevy::prelude::*;
-/// use moonshine_util::hierarchy::HierarchyQuery;
-///
-/// #[derive(Component)]
-/// struct Needle;
-///
-/// #[derive(Component)]
-/// struct Haystack;
-///
-/// fn spawn_haystack(mut commands: Commands) {
-///     commands.spawn(Haystack).with_children(|x| {
-///         x.spawn_empty().with_children(|y| {
-///             y.spawn_empty().with_children(|z| {
-///                 z.spawn(Needle);
-///             });
-///         });
-///     });
-/// }
-///
-/// fn find_needle(
-///     haystack: Query<Entity, With<Haystack>>,
-///     needle: Query<Entity, With<Needle>>,
-///     hierarchy: HierarchyQuery
-/// ) {
-///     let haystack = haystack.single();
-///     let needle = hierarchy.find_descendant(haystack, &needle);
-///     assert!(needle.is_some());
-/// }
-///
-/// # bevy_ecs::system::assert_is_system(spawn_haystack);
-/// # bevy_ecs::system::assert_is_system(find_needle);
-/// ```
 #[derive(SystemParam)]
 pub struct HierarchyQuery<'w, 's> {
     parent: Query<'w, 's, &'static Parent>,
     children: Query<'w, 's, &'static Children>,
 }
 
-impl<'w, 's> HierarchyQuery<'w, 's> {
+impl HierarchyQuery<'_, '_> {
     /// Returns the parent of the given entity, if it has one.
     pub fn parent(&self, entity: Entity) -> Option<Entity> {
         self.parent.get(entity).ok().map(|parent| **parent)
@@ -128,7 +93,7 @@ mod tests {
             true
         });
 
-        assert!(pass);
+        assert!(pass.unwrap());
     }
 
     #[test]
@@ -154,16 +119,18 @@ mod tests {
             });
         });
 
-        let r = w.run_system_once(
-            move |q: HierarchyQuery, qa: Query<&A>, qx: Query<Entity, With<X>>| {
-                let entity = qx.single();
-                let mut r = Vec::new();
-                for e in q.ancestors(entity) {
-                    r.push(qa.get(e).unwrap().0);
-                }
-                r
-            },
-        );
+        let r = w
+            .run_system_once(
+                move |q: HierarchyQuery, qa: Query<&A>, qx: Query<Entity, With<X>>| {
+                    let entity = qx.single();
+                    let mut r = Vec::new();
+                    for e in q.ancestors(entity) {
+                        r.push(qa.get(e).unwrap().0);
+                    }
+                    r
+                },
+            )
+            .unwrap();
 
         assert_eq!(r, vec![6, 1, 0]);
     }
@@ -191,13 +158,15 @@ mod tests {
             })
             .id();
 
-        let r = w.run_system_once(move |q: HierarchyQuery, qa: Query<&A>| {
-            let mut r = Vec::new();
-            for e in q.descendants_wide(entity) {
-                r.push(qa.get(e).unwrap().0);
-            }
-            r
-        });
+        let r = w
+            .run_system_once(move |q: HierarchyQuery, qa: Query<&A>| {
+                let mut r = Vec::new();
+                for e in q.descendants_wide(entity) {
+                    r.push(qa.get(e).unwrap().0);
+                }
+                r
+            })
+            .unwrap();
 
         assert_eq!(r, vec![1, 2, 6, 3, 4, 7, 5]);
     }
@@ -225,13 +194,15 @@ mod tests {
             })
             .id();
 
-        let r = w.run_system_once(move |q: HierarchyQuery, qa: Query<&A>| {
-            let mut r = Vec::new();
-            for e in q.descendants_deep(entity) {
-                r.push(qa.get(e).unwrap().0);
-            }
-            r
-        });
+        let r = w
+            .run_system_once(move |q: HierarchyQuery, qa: Query<&A>| {
+                let mut r = Vec::new();
+                for e in q.descendants_deep(entity) {
+                    r.push(qa.get(e).unwrap().0);
+                }
+                r
+            })
+            .unwrap();
 
         assert_eq!(r, vec![1, 2, 3, 4, 5, 6, 7]);
     }

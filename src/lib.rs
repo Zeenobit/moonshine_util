@@ -9,3 +9,7 @@ pub mod system;
 pub mod prelude {
     pub use crate::{expect::Expect, system::*};
 }
+
+pub fn get_short_name(name: &str) -> String {
+    disqualified::ShortName(name).to_string()
+}

@@ -92,6 +92,13 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
         T::shrink(item)
     }
 
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        ExpectFetch {
+            fetch: T::shrink_fetch(fetch.fetch),
+            matches: fetch.matches,
+        }
+    }
+
     const IS_DENSE: bool = T::IS_DENSE;
 
     #[inline]
@@ -187,6 +194,7 @@ mod tests {
     fn expected_component() {
         let mut w = World::default();
         w.spawn(A);
-        w.run_system_once(|q: Query<(&A, Expect<&B>)>| for _ in q.iter() {});
+        w.run_system_once(|q: Query<(&A, Expect<&B>)>| for _ in q.iter() {})
+            .unwrap();
     }
 }
