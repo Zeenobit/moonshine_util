@@ -34,41 +34,7 @@ impl HierarchyQuery<'_, '_> {
     }
 
     pub fn descendants_deep(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
-        DeepDescendantIter::new(&self.children, entity)
-    }
-}
-
-/// An [`Iterator`] of [`Entity`]s over the descendants of an [`Entity`].
-///
-/// Traverses the hierarchy breadth-first.
-struct DeepDescendantIter<'w, 's, 'a> {
-    query: &'a Query<'w, 's, &'static Children>,
-    stack: Vec<Entity>,
-}
-
-impl<'w, 's, 'a> DeepDescendantIter<'w, 's, 'a> {
-    fn new(query: &'a Query<'w, 's, &'static Children>, entity: Entity) -> Self {
-        DeepDescendantIter {
-            query,
-            stack: query
-                .get(entity)
-                .into_iter()
-                .flatten()
-                .copied()
-                .rev()
-                .collect(),
-        }
-    }
-}
-
-impl Iterator for DeepDescendantIter<'_, '_, '_> {
-    type Item = Entity;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let current = self.stack.pop()?;
-        let children = self.query.get(current).into_iter().flatten().copied().rev();
-        self.stack.extend(children);
-        Some(current)
+        self.children.iter_descendants_depth_first(entity)
     }
 }
 
