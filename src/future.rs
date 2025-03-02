@@ -76,6 +76,7 @@ use std::sync::{Arc, Mutex};
 /// # bevy_ecs::system::assert_is_system(request_add);
 /// # bevy_ecs::system::assert_is_system(process_add_result);
 /// ```
+#[deprecated(since = "0.2.6", note = "use sparse components instead")]
 #[must_use]
 pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
@@ -111,6 +112,7 @@ impl<T> Default for Promise<T> {
 /// A value that will be read from in the future, when ready.
 ///
 /// See [`Promise`] for more usage information and examples.
+#[deprecated(since = "0.2.6", note = "use sparse components instead")]
 #[must_use]
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
