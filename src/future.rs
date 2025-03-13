@@ -80,6 +80,7 @@ use std::sync::{Arc, Mutex};
 #[must_use]
 pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
+#[allow(deprecated)]
 impl<T> Promise<T> {
     /// Creates a new promise.
     ///
@@ -103,6 +104,7 @@ impl<T> Promise<T> {
     }
 }
 
+#[allow(deprecated)]
 impl<T> Default for Promise<T> {
     fn default() -> Self {
         Self::new()
@@ -116,6 +118,7 @@ impl<T> Default for Promise<T> {
 #[must_use]
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
+#[allow(deprecated)]
 impl<T> Future<T> {
     /// Creates a new future that is already expired.
     pub fn expired() -> Self {
@@ -153,6 +156,7 @@ impl<T> Future<T> {
     pub fn forget(self) {}
 }
 
+#[allow(deprecated)]
 impl<T> Default for Future<T> {
     fn default() -> Self {
         Self::expired()
@@ -188,6 +192,7 @@ impl<T> FutureValue<T> {
 pub use FutureValue::{Expired, Ready, Wait};
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod test {
     use super::*;
 
