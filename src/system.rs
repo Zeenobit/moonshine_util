@@ -93,3 +93,27 @@ pub fn remove_resource<T: Resource>(mut commands: Commands) {
 pub fn remove_resource_immediate<T: Resource>(world: &mut World) {
     world.remove_resource::<T>();
 }
+
+/// A [`System`] which removes all instances of a given [`Component`].
+///
+/// # Example
+/// ```
+/// use bevy::prelude::*;
+/// use moonshine_util::system::remove_all_components;
+///
+/// #[derive(Component)]
+/// struct T;
+///
+/// let mut app = App::new();
+/// app.add_plugins(MinimalPlugins);
+/// app.add_systems(Update, remove_all_components::<T>);
+/// let entity = app.world_mut().spawn(T).id();
+/// app.update();
+///
+/// assert!(!app.world().entity(entity).contains::<T>());
+/// ```
+pub fn remove_all_components<T: Component>(query: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &query {
+        commands.entity(entity).remove::<T>();
+    }
+}
