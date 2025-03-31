@@ -2,18 +2,19 @@ use std::marker::PhantomData;
 
 use bevy_ecs::{
     archetype::Archetype,
-    component::{ComponentId, Components, Tick},
+    component::{ComponentHooks, ComponentId, Components, StorageType, Tick},
     prelude::*,
     query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery},
     storage::{Table, TableRow},
-    world::unsafe_world_cell::UnsafeWorldCell,
+    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld},
 };
 
 /// A [`QueryData`] decorator which panics if its inner query does not match.
 ///
 /// # Usage
-/// This decorator is useful for preventing systems from silently skipping over entities which may
-/// erroneously not a query.
+///
+/// As a query parameter, this decorator is useful for preventing systems from silently skipping
+/// over entities which may erroneously not match the query.
 ///
 /// Consider the following erroneous example:
 /// ```
@@ -60,7 +61,63 @@ use bevy_ecs::{
 /// }
 /// # bevy_ecs::system::assert_is_system(safe_system);
 /// ```
-pub struct Expect<T: QueryData>(PhantomData<T>);
+///
+/// ## Component Requirements
+///
+/// When used as a [`Component`], this decorator will panic if the given component type `T` does
+/// not exist on the entity. This is especially useful as a component requirement:
+///
+/// ```should_panic
+/// # use bevy::prelude::*;
+/// # use bevy::ecs::system::RunSystemOnce;
+/// use moonshine_util::expect::Expect;
+///
+/// #[derive(Component)]
+/// struct A;
+///
+/// #[derive(Component)]
+/// #[require(Expect<A>)]
+/// struct B;
+///
+/// fn unsafe_system(mut commands: Commands) {
+///    commands.spawn(B); // Spawn B without A! This will panic!
+/// }
+///
+/// # bevy_ecs::system::assert_is_system(unsafe_system);
+/// # let mut world = World::new();
+/// # world.run_system_once(unsafe_system).unwrap();
+/// ```
+pub struct Expect<T>(PhantomData<T>);
+
+impl<T: Component> Expect<T> {
+    fn on_add(mut world: DeferredWorld, entity: Entity, _: ComponentId) {
+        world.commands().queue(move |world: &mut World| {
+            let mut entity = world.entity_mut(entity);
+            let _ = entity.take::<Self>().unwrap();
+            if !entity.contains::<T>() {
+                panic!(
+                    "expected component of type `{}` does not exist on entity {:?}",
+                    std::any::type_name::<T>(),
+                    entity.id()
+                );
+            }
+        })
+    }
+}
+
+impl<T: Component> Component for Expect<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_add(Self::on_add);
+    }
+}
+
+impl<T: Component> Default for Expect<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
 
 #[doc(hidden)]
 pub struct ExpectFetch<'w, T: WorldQuery> {
