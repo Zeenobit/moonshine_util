@@ -1,17 +1,16 @@
 use bevy_ecs::{prelude::*, system::SystemParam};
-use bevy_hierarchy::prelude::*;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
 #[derive(SystemParam)]
 pub struct HierarchyQuery<'w, 's> {
-    parent: Query<'w, 's, &'static Parent>,
+    parent: Query<'w, 's, &'static ChildOf>,
     children: Query<'w, 's, &'static Children>,
 }
 
 impl HierarchyQuery<'_, '_> {
     /// Returns the parent of the given entity, if it has one.
     pub fn parent(&self, entity: Entity) -> Option<Entity> {
-        self.parent.get(entity).ok().map(|parent| **parent)
+        self.parent.get(entity).ok().map(|parent| parent.0)
     }
 
     /// Iterates over the children of the given entity.
@@ -87,10 +86,9 @@ mod tests {
 
         let r = w
             .run_system_once(
-                move |q: HierarchyQuery, qa: Query<&A>, qx: Query<Entity, With<X>>| {
-                    let entity = qx.single();
+                move |q: HierarchyQuery, qa: Query<&A>, x: Single<Entity, With<X>>| {
                     let mut r = Vec::new();
-                    for e in q.ancestors(entity) {
+                    for e in q.ancestors(*x) {
                         r.push(qa.get(e).unwrap().0);
                     }
                     r
