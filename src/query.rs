@@ -20,8 +20,6 @@ unsafe impl<T: FromQuery> WorldQuery for Get<T> {
 
     type State = <T::Query as WorldQuery>::State;
 
-
-
     fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
         T::Query::shrink_fetch(fetch)
     }
@@ -72,15 +70,15 @@ unsafe impl<T: FromQuery> WorldQuery for Get<T> {
 
 unsafe impl<T: FromQuery> QueryData for Get<T> {
     type ReadOnly = Self;
-    
+
     const IS_READ_ONLY: bool = false;
-    
+
     type Item<'a> = T;
-    
+
     fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
         item
     }
-    
+
     unsafe fn fetch<'w>(
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,

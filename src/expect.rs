@@ -111,7 +111,7 @@ impl<T: Component> Component for Expect<T> {
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_add(Self::on_add);
     }
-    
+
     type Mutability = Mutable;
 }
 
@@ -138,15 +138,15 @@ impl<T: WorldQuery> Clone for ExpectFetch<'_, T> {
 
 unsafe impl<T: QueryData> QueryData for Expect<T> {
     type ReadOnly = Expect<T::ReadOnly>;
-    
+
     const IS_READ_ONLY: bool = false;
-    
+
     type Item<'w> = T::Item<'w>;
-    
+
     fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
         T::shrink(item)
     }
-    
+
     #[inline(always)]
     unsafe fn fetch<'w>(
         fetch: &mut Self::Fetch<'w>,
@@ -173,8 +173,6 @@ unsafe impl<T: ReadOnlyQueryData> ReadOnlyQueryData for Expect<T> {}
 unsafe impl<T: QueryData> WorldQuery for Expect<T> {
     type Fetch<'w> = ExpectFetch<'w, T>;
     type State = T::State;
-
-
 
     fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
         ExpectFetch {
