@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use bevy_ecs::{
     archetype::Archetype,
-    component::{ComponentHooks, ComponentId, Components, StorageType, Tick},
+    component::{ComponentHooks, ComponentId, Components, HookContext, Mutable, StorageType, Tick},
     prelude::*,
     query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery},
     storage::{Table, TableRow},
@@ -90,9 +90,9 @@ use bevy_ecs::{
 pub struct Expect<T>(PhantomData<T>);
 
 impl<T: Component> Expect<T> {
-    fn on_add(mut world: DeferredWorld, entity: Entity, _: ComponentId) {
+    fn on_add(mut world: DeferredWorld, hook_context: HookContext) {
         world.commands().queue(move |world: &mut World| {
-            let mut entity = world.entity_mut(entity);
+            let mut entity = world.entity_mut(hook_context.entity);
             let _ = entity.take::<Self>().unwrap();
             if !entity.contains::<T>() {
                 panic!(
@@ -111,6 +111,8 @@ impl<T: Component> Component for Expect<T> {
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_add(Self::on_add);
     }
+    
+    type Mutability = Mutable;
 }
 
 impl<T: Component> Default for Expect<T> {
@@ -136,18 +138,43 @@ impl<T: WorldQuery> Clone for ExpectFetch<'_, T> {
 
 unsafe impl<T: QueryData> QueryData for Expect<T> {
     type ReadOnly = Expect<T::ReadOnly>;
+    
+    const IS_READ_ONLY: bool = false;
+    
+    type Item<'w> = T::Item<'w>;
+    
+    fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
+        T::shrink(item)
+    }
+    
+    #[inline(always)]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        entity: Entity,
+        table_row: TableRow,
+    ) -> Self::Item<'w> {
+        let item = fetch
+            .matches
+            .then(|| T::fetch(&mut fetch.fetch, entity, table_row));
+        if let Some(item) = item {
+            item
+        } else {
+            panic!(
+                "expected query of type `{}` does not match entity {:?}",
+                std::any::type_name::<T>(),
+                entity
+            );
+        }
+    }
 }
 
 unsafe impl<T: ReadOnlyQueryData> ReadOnlyQueryData for Expect<T> {}
 
 unsafe impl<T: QueryData> WorldQuery for Expect<T> {
     type Fetch<'w> = ExpectFetch<'w, T>;
-    type Item<'w> = T::Item<'w>;
     type State = T::State;
 
-    fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
-        T::shrink(item)
-    }
+
 
     fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
         ExpectFetch {
@@ -189,26 +216,6 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
         fetch.matches = T::matches_component_set(state, &|id| table.has_column(id));
         if fetch.matches {
             T::set_table(&mut fetch.fetch, state, table);
-        }
-    }
-
-    #[inline(always)]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        entity: Entity,
-        table_row: TableRow,
-    ) -> Self::Item<'w> {
-        let item = fetch
-            .matches
-            .then(|| T::fetch(&mut fetch.fetch, entity, table_row));
-        if let Some(item) = item {
-            item
-        } else {
-            panic!(
-                "expected query of type `{}` does not match entity {:?}",
-                std::any::type_name::<T>(),
-                entity
-            );
         }
     }
 

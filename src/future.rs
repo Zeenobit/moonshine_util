@@ -214,30 +214,30 @@ mod test {
         w.spawn(Client(f));
 
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+            w.run_system_once(move |q: Query<&Client>| { q.single().unwrap().0.poll() })
                 .unwrap(),
             Wait
         );
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+            w.run_system_once(move |q: Query<&Client>| { q.single().unwrap().0.poll() })
                 .unwrap(),
             Wait
         );
 
         w.run_system_once(move |q: Query<(Entity, &Server)>, mut commands: Commands| {
-            let (entity, server) = q.single();
+            let (entity, server) = q.single().unwrap();
             server.0.set(());
             commands.entity(entity).remove::<Server>();
         })
         .unwrap();
 
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+            w.run_system_once(move |q: Query<&Client>| { q.single().unwrap().0.poll() })
                 .unwrap(),
             Ready(())
         );
         assert_eq!(
-            w.run_system_once(move |q: Query<&Client>| { q.single().0.poll() })
+            w.run_system_once(move |q: Query<&Client>| { q.single().unwrap().0.poll() })
                 .unwrap(),
             Expired
         );
