@@ -1,14 +1,13 @@
 use std::marker::PhantomData;
 
-use bevy_ecs::component::{ComponentHook, HookContext, Immutable};
-use bevy_ecs::{
-    archetype::Archetype,
-    component::{ComponentId, Components, StorageType, Tick},
-    prelude::*,
-    query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery},
-    storage::{Table, TableRow},
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld},
+use bevy_ecs::archetype::Archetype;
+use bevy_ecs::component::{
+    ComponentHook, ComponentId, Components, HookContext, Immutable, StorageType, Tick,
 };
+use bevy_ecs::prelude::*;
+use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
+use bevy_ecs::storage::{Table, TableRow};
+use bevy_ecs::world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld};
 
 /// A [`QueryData`] decorator which panics if its inner query does not match.
 ///

@@ -1,4 +1,5 @@
-use bevy_ecs::{prelude::*, system::SystemParam};
+use bevy_ecs::prelude::*;
+use bevy_ecs::system::SystemParam;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
 #[derive(SystemParam)]
