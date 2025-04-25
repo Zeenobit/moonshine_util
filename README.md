@@ -49,7 +49,10 @@ fn safe_system(mut query: Query<(&A, Expect<&B>)>) {
 }
 ```
 
-`Expect<T>` may also be used as a required component:
+Normally, expected components would just be added as required components. However, in some cases it may not be possible
+to add the required components, such as when dealing with third party crates or generic code.
+
+Note that `Expect<T>` may also be used as a required component:
 
 ```rust
 use bevy::prelude::*;
