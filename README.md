@@ -10,7 +10,7 @@ Collection of utilities for [Bevy](https://github.com/bevyengine/bevy).
 
 ## Features
 
-### `Expect<T>`
+### [`Expect<T>`]
 
 A decorator for [`QueryData`](https://docs.rs/bevy/latest/bevy/ecs/query/trait.QueryData.html) which panics if it doesn't match.
 
@@ -52,7 +52,7 @@ fn safe_system(mut query: Query<(&A, Expect<&B>)>) {
 Normally, expected components would just be added as required components. However, in some cases it may not be possible
 to add the required components, such as when dealing with third party crates or generic code.
 
-Note that `Expect<T>` may also be used as a required component:
+Note that [`Expect<T>`] may also be used as a required component:
 
 ```rust
 use bevy::prelude::*;
@@ -66,9 +66,9 @@ struct A;
 struct B;
 ```
 
-In this context, `Expect<T>` will panic if `B` is ever inserted into an entity without `A`.
+In this context, [`Expect<T>`] will panic if `B` is ever inserted into an entity without `A`.
 
-### `Get<T>` and `FromQuery`
+### [`Get<T>`] and [`FromQuery`]
 
 An ergonomic and generic way to process repetitive query patterns:
 
@@ -99,7 +99,7 @@ fn average_height(query: Query<Get<Height>>) -> Height {
 }
 ```
 
-### `HierarchyQuery`
+### [`HierarchyQuery`]
 
 A convenient [`SystemParam`](https://docs.rs/bevy/latest/bevy/ecs/system/trait.SystemParam.html) for traversing and querying entity hierarchies:
 
@@ -144,11 +144,11 @@ Some useful functions include:
 - `fn descendants_wide(&self, Entity) -> Iterator<Item = Entity>`
 - `fn descendants_deep(&self, Entity) -> Iterator<Item = Entity>`
 
-See code documentation for complete details.
+See [documentation][`HierarchyQuery`] for details.
 
 For even more convenient hierarchy traversal, check out [🌴 Moonshine Object](https://github.com/Zeenobit/moonshine_object).
 
-### `RunSystemLoop`
+### [`RunSystemLoop`]
 
 A trait similar to [`RunSystemOnce`](https://docs.rs/bevy/latest/bevy/ecs/system/trait.RunSystemOnce.html) which allows you to run a system loop for testing purposes:
 
@@ -167,9 +167,9 @@ assert!(world.get_entity(outputs[0]).is_ok());
 assert!(world.get_entity(outputs[1]).is_ok());
 ```
 
-### Utility Systems
+### [Utility Systems](https://docs.rs/moonshine-util/latest/moonshine_util/system/index.html)
 
-A collection of simple and generic systems useful for constructing larger system pipelines:
+A growing collection of simple and generic systems useful for constructing larger system pipelines:
 
 - `has_event<T: Event>`
 - `has_resource<T: Resource>`
@@ -177,10 +177,28 @@ A collection of simple and generic systems useful for constructing larger system
 - `remove_resource_immediate<T: Resource>`
 - `remove_all_components<T: Component>`
 
-See code documentation for usage examples.
+See [documentation](https://docs.rs/moonshine-util/latest/moonshine_util/system/index.html) for details and usage examples.
+
+## Installation
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+moonshine-util = "0.2.7"
+```
+
+This crate is also included as part of [🍸 Moonshine Core](https://github.com/Zeenobit/moonshine_core).
 
 ## Support
 
 Please [post an issue](https://github.com/Zeenobit/moonshine_util/issues/new) for any bugs, questions, or suggestions.
 
 You may also contact me on the official [Bevy Discord](https://discord.gg/bevy) server as **@Zeenobit**.
+
+
+[`Expect<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/expect/struct.Expect.html
+[`Get<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/struct.Get.html
+[`FromQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/trait.FromQuery.html
+[`HierarchyQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html
+[`RunSystemLoop`]:https://docs.rs/moonshine-util/latest/moonshine_util/diagnostics/trait.RunSystemLoop.html
