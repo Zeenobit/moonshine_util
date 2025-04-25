@@ -6,13 +6,48 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
 
+/// A trait for types that can be constructed from query data.
+///
+/// See [`Get`] for more information on usage.
 pub trait FromQuery {
     type Query: ReadOnlyQueryData;
 
     fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self;
 }
 
-// TODO: Documentation (Experimental!)
+/// A query decorator which maps some query data into `T` using [`FromQuery`].
+///
+/// This is useful for when you want to compute a processed value from some query data.
+///
+/// # Example
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// struct Height(f32);
+///
+/// impl FromQuery for Height {
+///     type Query = &'static GlobalTransform;
+///
+///     fn map(data: &GlobalTransform) -> Self {
+///         Self(data.translation().y)
+///     }
+/// }
+///
+/// fn average_height(query: Query<Get<Height>>) -> Height {
+///     let mut total_height = 0.0;
+///     let mut count = 0;
+///     for Height(h) in query.iter() {
+///         total_height += h;
+///         count += 1;
+///     }
+///
+///     Height(total_height / count as f32)
+/// }
+///
+/// # bevy_ecs::system::assert_is_system(average_height);
+/// ```
 pub struct Get<T>(PhantomData<T>);
 
 unsafe impl<T: FromQuery> WorldQuery for Get<T> {

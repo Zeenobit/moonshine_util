@@ -65,6 +65,37 @@ struct B;
 
 In this context, `Expect<T>` will panic if `B` is ever inserted into an entity without `A`.
 
+### `Get<T>` and `FromQuery`
+
+An ergonomic and generic way to process repetitive query patterns:
+
+```rust
+use bevy::prelude::*;
+use moonshine_util::prelude::*;
+
+struct Height(f32);
+
+impl FromQuery for Height {
+    type Query = &'static GlobalTransform;
+
+    fn map(data: &GlobalTransform) -> Self {
+        Self(data.translation().y)
+    }
+}
+
+fn average_height(query: Query<Get<Height>>) -> Height {
+    // Transforms are so yesterday!
+    let mut total_height = 0.0;
+    let mut count = 0;
+    for Height(h) in query.iter() {
+        total_height += h;
+        count += 1;
+    }
+
+    Height(total_height / count as f32)
+}
+```
+
 ### `HierarchyQuery`
 
 A convenient [`SystemParam`](https://docs.rs/bevy/latest/bevy/ecs/system/trait.SystemParam.html) for traversing and querying entity hierarchies:
