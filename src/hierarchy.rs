@@ -9,11 +9,15 @@ pub struct HierarchyQuery<'w, 's> {
 
 impl HierarchyQuery<'_, '_> {
     /// Returns the parent of the given entity, if it has one.
+    ///
+    /// See [`ChildOf`] for more information.
     pub fn parent(&self, entity: Entity) -> Option<Entity> {
         self.parent.get(entity).ok().map(|parent| parent.0)
     }
 
     /// Iterates over the children of the given entity.
+    ///
+    /// See [`Children`] for more information.
     pub fn children(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.children
             .get(entity)
@@ -23,15 +27,22 @@ impl HierarchyQuery<'_, '_> {
     }
 
     /// Iterates over the ancestors of the given `entity`.
+    ///
+    /// See [`Query::iter_ancestors`] for more information.
     pub fn ancestors(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.parent.iter_ancestors(entity)
     }
 
-    /// Iterates over the descendants of the given `entity`.
+    /// Iterates over the descendants of the given `entity` in a breadth-first order.
+    ///
+    /// See [`Query::iter_descendants`] for more information.
     pub fn descendants_wide(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.children.iter_descendants(entity)
     }
 
+    /// Iterates over the descendants of the given `entity` in depth-first order.
+    ///
+    /// See [`Query::iter_descendants_depth_first`] for more information.
     pub fn descendants_deep(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
         self.children.iter_descendants_depth_first(entity)
     }

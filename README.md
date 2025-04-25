@@ -18,7 +18,7 @@ This helps avoid silent failures in systems due to missing components:
 
 ```rust
 use bevy::prelude::*;
-use moonshine_util::expect::Expect;
+use moonshine_util::prelude::*;
 
 #[derive(Component)]
 struct A;
@@ -48,6 +48,22 @@ fn safe_system(mut query: Query<(&A, Expect<&B>)>) {
     }
 }
 ```
+
+`Expect<T>` may also be used as a required component:
+
+```rust
+use bevy::prelude::*;
+use moonshine_util::prelude::*;
+
+#[derive(Component)]
+struct A;
+
+#[derive(Component)]
+#[require(Expect<A>)] // Expect `A` to be present
+struct B;
+```
+
+In this context, `Expect<T>` will panic if `B` is ever inserted into an entity without `A`.
 
 ### `HierarchyQuery`
 
@@ -89,19 +105,14 @@ fn find_needle(
 Some useful functions include:
 
 - `fn parent(&self, Entity) -> Option<Entity>`
-- `fn has_parent(&self, Entity) -> bool`
 - `fn children(&self, Entity) -> Iterator<Item = Entity>`
-- `fn has_children(&self, Entity) -> bool`
-- `fn root(&self, Entity) -> Entity`
-- `fn is_root(&self, Entity) -> bool`
 - `fn ancestors(&self, Entity) -> Iterator<Item = Entity>`
-- `fn descendants(&self, Entity) -> Iterator<Item = Entity>`
-- `fn is_ancestor_of(&self, Entity, Entity) -> bool`
-- `fn is_descendant_of(&self, Entity, Entity) -> bool`
-- `fn find_ancestor<T, F>(&self, Entity, &Query<T, F>) -> Option<QueryItem<T>>`
-- `fn find_descendant<T, F>(&self, Entity, &Query<T, F>) -> Option<QueryItem<T>>`
+- `fn descendants_wide(&self, Entity) -> Iterator<Item = Entity>`
+- `fn descendants_deep(&self, Entity) -> Iterator<Item = Entity>`
 
 See code documentation for complete details.
+
+For even more convenient hierarchy traversal, check out [🌴 Moonshine Object](https://github.com/Zeenobit/moonshine_object).
 
 ### `RunSystemLoop`
 
@@ -126,10 +137,11 @@ assert!(world.get_entity(outputs[1]).is_ok());
 
 A collection of simple and generic systems useful for constructing larger system pipelines:
 
-- `has_event<T: Event>() -> bool`
-- `has_resource<T: Resource>() -> bool`
-- `remove_resource<T: Resource>(Commands)`
-- `remove_resource_immediate<T: Resource>(&mut World)`
+- `has_event<T: Event>`
+- `has_resource<T: Resource>`
+- `remove_resource<T: Resource>`
+- `remove_resource_immediate<T: Resource>`
+- `remove_all_components<T: Component>`
 
 See code documentation for usage examples.
 

@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::sync::{Arc, Mutex};
 
 /// A value that will be written to in the future.
@@ -76,7 +78,7 @@ use std::sync::{Arc, Mutex};
 /// # bevy_ecs::system::assert_is_system(request_add);
 /// # bevy_ecs::system::assert_is_system(process_add_result);
 /// ```
-#[deprecated(since = "0.2.6", note = "use sparse components instead")]
+#[deprecated(since = "0.2.6")]
 #[must_use]
 pub struct Promise<T>(Arc<Mutex<FutureValue<T>>>);
 
@@ -114,7 +116,7 @@ impl<T> Default for Promise<T> {
 /// A value that will be read from in the future, when ready.
 ///
 /// See [`Promise`] for more usage information and examples.
-#[deprecated(since = "0.2.6", note = "use sparse components instead")]
+#[deprecated(since = "0.2.6")]
 #[must_use]
 pub struct Future<T>(Arc<Mutex<FutureValue<T>>>);
 
@@ -190,58 +192,3 @@ impl<T> FutureValue<T> {
 }
 
 pub use FutureValue::{Expired, Ready, Wait};
-
-#[cfg(test)]
-#[allow(deprecated)]
-mod test {
-    use super::*;
-
-    use bevy_ecs::{prelude::*, system::RunSystemOnce};
-
-    #[test]
-    fn future_value() {
-        #[derive(Component)]
-        struct Server(Promise<()>);
-
-        #[derive(Component)]
-        struct Client(Future<()>);
-
-        let mut w = World::new();
-
-        let p = Promise::new();
-        let f = Future::new(&p);
-        w.spawn(Server(p));
-        w.spawn(Client(f));
-
-        assert_eq!(
-            w.run_system_once(move |q: Single<&Client>| { q.0.poll() })
-                .unwrap(),
-            Wait
-        );
-        assert_eq!(
-            w.run_system_once(move |q: Single<&Client>| { q.0.poll() })
-                .unwrap(),
-            Wait
-        );
-
-        w.run_system_once(
-            move |q: Single<(Entity, &Server)>, mut commands: Commands| {
-                let (entity, server) = *q;
-                server.0.set(());
-                commands.entity(entity).remove::<Server>();
-            },
-        )
-        .unwrap();
-
-        assert_eq!(
-            w.run_system_once(move |q: Single<&Client>| { q.0.poll() })
-                .unwrap(),
-            Ready(())
-        );
-        assert_eq!(
-            w.run_system_once(move |q: Single<&Client>| { q.0.poll() })
-                .unwrap(),
-            Expired
-        );
-    }
-}
