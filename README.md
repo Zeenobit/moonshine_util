@@ -129,7 +129,7 @@ fn find_needle(
     needle_query: Query<Entity, With<Needle>>,
     hierarchy: HierarchyQuery
 ) {
-    let haystack = haystack.single();
+    let haystack = haystack.single().unwrap();
     for needle in hierarchy.descendants_deep(haystack) {
         // ...
     }
