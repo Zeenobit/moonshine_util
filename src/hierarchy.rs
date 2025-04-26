@@ -1,3 +1,5 @@
+//! Utilities related to relationship hierarchy traversal.
+
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemParam;
 
@@ -7,6 +9,8 @@ pub struct HierarchyQuery<'w, 's> {
     parent: Query<'w, 's, &'static ChildOf>,
     children: Query<'w, 's, &'static Children>,
 }
+
+// TODO: Support for generic relationship hierarchies
 
 impl HierarchyQuery<'_, '_> {
     /// Returns the parent of the given entity, if it has one.

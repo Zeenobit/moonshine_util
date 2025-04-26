@@ -8,9 +8,10 @@ pub mod query;
 pub mod system;
 
 pub mod prelude {
+    //! Prelude module to import the most essential utilities.
+
     pub use crate::expect::Expect;
     pub use crate::query::{FromQuery, Get};
-    pub use crate::system::*;
 }
 
 /// Wrapper for [`disqualified::ShortName`] since it was removed from Bevy standard.

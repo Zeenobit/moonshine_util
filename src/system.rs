@@ -1,3 +1,5 @@
+//! Utility systems for generic system pipeline construction.
+
 use bevy_ecs::prelude::*;
 
 /// A [`System`] which checks if a given resource exists.

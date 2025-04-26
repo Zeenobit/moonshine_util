@@ -1,3 +1,5 @@
+//! Utilities for diagnostics and testing.
+
 use bevy_ecs::prelude::*;
 
 /// A trait similar to [`bevy_ecs::system::RunSystemOnce`], but it runs a system multiple times.

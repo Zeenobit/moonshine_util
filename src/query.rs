@@ -1,3 +1,5 @@
+//! Utilities and decorators for working with queries.
+
 use std::marker::PhantomData;
 
 use bevy_ecs::archetype::Archetype;
@@ -10,8 +12,10 @@ use bevy_ecs::storage::{Table, TableRow};
 ///
 /// See [`Get`] for more information on usage.
 pub trait FromQuery {
+    /// The query type which this type can be constructed from.
     type Query: ReadOnlyQueryData;
 
+    /// Called at the time of query execution to map the query data into `Self`.
     fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self;
 }
 

@@ -1,3 +1,5 @@
+//! A multi-purpose tool for validating [`Component`] presence.
+
 use std::marker::PhantomData;
 
 use bevy_ecs::archetype::Archetype;
