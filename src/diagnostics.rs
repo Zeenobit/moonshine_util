@@ -15,7 +15,7 @@ pub trait RunSystemLoop: Sized {
     ///
     /// let mut world = World::new();
     /// let entities = world.run_system_loop(3, |mut commands: Commands| {
-    ///     commands.spawn_empty();
+    ///     commands.spawn_empty().id()
     /// });
     ///
     /// assert_eq!(entities.len(), 3);
