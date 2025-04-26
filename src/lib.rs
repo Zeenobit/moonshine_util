@@ -1,13 +1,11 @@
 #![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
 
 pub mod diagnostics;
 pub mod expect;
 pub mod hierarchy;
 pub mod query;
 pub mod system;
-
-#[deprecated(since = "0.2.6")]
-pub mod future;
 
 pub mod prelude {
     pub use crate::expect::Expect;
