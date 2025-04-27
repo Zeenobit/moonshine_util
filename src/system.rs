@@ -4,8 +4,6 @@ use bevy_ecs::prelude::*;
 
 /// A [`System`] which checks if a given resource exists.
 ///
-/// This is useful when used in combination with [`IntoSystemConfigs::run_if`].
-///
 /// # Example
 /// ```
 /// use bevy::prelude::*;
@@ -28,8 +26,6 @@ pub fn has_resource<T: Resource>(resource: Option<Res<T>>) -> bool {
 }
 
 /// A [`System`] which checks if any event of a given type has been dispatched.
-///
-/// This is useful when used in combination with [`IntoSystemConfigs::run_if`].
 ///
 /// # Example
 /// ```
