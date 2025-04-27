@@ -110,7 +110,7 @@ unsafe impl<T: FromQuery> WorldQuery for Get<T> {
 unsafe impl<T: FromQuery> QueryData for Get<T> {
     type ReadOnly = Self;
 
-    const IS_READ_ONLY: bool = <Self as QueryData>::IS_READ_ONLY;
+    const IS_READ_ONLY: bool = <T::Query as QueryData>::IS_READ_ONLY;
 
     type Item<'a> = T;
 
