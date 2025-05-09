@@ -11,6 +11,7 @@ pub mod prelude {
     //! Prelude module to import the most essential utilities.
 
     pub use crate::expect::Expect;
+    pub use crate::hierarchy::WithChild;
     pub use crate::query::{FromQuery, Get};
 }
 
