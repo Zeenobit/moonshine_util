@@ -21,3 +21,7 @@ pub mod prelude {
 pub fn get_short_name(name: &str) -> String {
     disqualified::ShortName(name).to_string()
 }
+
+pub fn get_short_type_name<T>() -> String {
+    get_short_name(std::any::type_name::<T>())
+}
