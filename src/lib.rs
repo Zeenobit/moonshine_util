@@ -5,6 +5,7 @@ pub mod diagnostics;
 pub mod expect;
 pub mod hierarchy;
 pub mod query;
+pub mod spawn;
 pub mod system;
 
 pub mod prelude {
@@ -13,6 +14,7 @@ pub mod prelude {
     pub use crate::expect::Expect;
     pub use crate::hierarchy::WithChild;
     pub use crate::query::{FromQuery, Get};
+    pub use crate::spawn::SpawnUnrelated;
 }
 
 /// Wrapper for [`disqualified::ShortName`] since it was removed from Bevy standard.
