@@ -13,7 +13,7 @@ pub mod prelude {
 
     pub use crate::expect::Expect;
     pub use crate::hierarchy::WithChild;
-    pub use crate::query::{FromQuery, Get};
+    pub use crate::query::{Get, MapQuery};
     pub use crate::spawn::SpawnUnrelated;
 }
 

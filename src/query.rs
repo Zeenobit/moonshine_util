@@ -11,12 +11,15 @@ use bevy_ecs::storage::{Table, TableRow};
 /// A trait for types that can be constructed from query data.
 ///
 /// See [`Get`] for more information on usage.
-pub trait FromQuery {
+pub trait MapQuery {
     /// The query type which this type can be constructed from.
     type Query: ReadOnlyQueryData;
 
+    /// The output type that this query will map to.
+    type Output;
+
     /// Called at the time of query execution to map the query data into `Self`.
-    fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self;
+    fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self::Output;
 }
 
 /// A query decorator which maps some query data into `T` using [`FromQuery`].
@@ -29,32 +32,34 @@ pub trait FromQuery {
 /// use bevy::prelude::*;
 /// use moonshine_util::prelude::*;
 ///
-/// struct Height(f32);
+/// struct Height;
 ///
-/// impl FromQuery for Height {
+/// impl MapQuery for Height {
 ///     type Query = &'static GlobalTransform;
 ///
-///     fn map(data: &GlobalTransform) -> Self {
-///         Self(data.translation().y)
+///     type Output = f32;
+///
+///     fn map(data: &GlobalTransform) -> f32 {
+///         data.translation().y
 ///     }
 /// }
 ///
-/// fn average_height(query: Query<Get<Height>>) -> Height {
+/// fn average_height(query: Query<Get<Height>>) -> f32 {
 ///     let mut total_height = 0.0;
 ///     let mut count = 0;
-///     for Height(h) in query.iter() {
+///     for h in query.iter() {
 ///         total_height += h;
 ///         count += 1;
 ///     }
 ///
-///     Height(total_height / count as f32)
+///     total_height / count as f32
 /// }
 ///
 /// # bevy_ecs::system::assert_is_system(average_height);
 /// ```
 pub struct Get<T>(PhantomData<T>);
 
-unsafe impl<T: FromQuery> WorldQuery for Get<T> {
+unsafe impl<T: MapQuery> WorldQuery for Get<T> {
     type Fetch<'a> = <T::Query as WorldQuery>::Fetch<'a>;
 
     type State = <T::Query as WorldQuery>::State;
@@ -107,12 +112,12 @@ unsafe impl<T: FromQuery> WorldQuery for Get<T> {
     }
 }
 
-unsafe impl<T: FromQuery> QueryData for Get<T> {
+unsafe impl<T: MapQuery> QueryData for Get<T> {
     type ReadOnly = Self;
 
     const IS_READ_ONLY: bool = <T::Query as QueryData>::IS_READ_ONLY;
 
-    type Item<'a> = T;
+    type Item<'a> = T::Output;
 
     fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
         item
@@ -127,4 +132,4 @@ unsafe impl<T: FromQuery> QueryData for Get<T> {
     }
 }
 
-unsafe impl<T: FromQuery> ReadOnlyQueryData for Get<T> {}
+unsafe impl<T: MapQuery> ReadOnlyQueryData for Get<T> {}
