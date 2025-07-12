@@ -1,7 +1,11 @@
+//! Utilities related to spawning entities.
+
 use bevy_ecs::component::HookContext;
 use bevy_ecs::prelude::*;
 use bevy_ecs::world::DeferredWorld;
 
+/// This [`Component`] is similar to [`SpawnWith`](bevy_ecs::spawn::SpawnWith), but it spawns the
+/// associated entity without any [`Relationship`](bevy_ecs::relationship::Relationship).
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 #[component(on_add = Self::on_add)]

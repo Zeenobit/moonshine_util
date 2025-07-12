@@ -24,6 +24,7 @@ pub fn get_short_name(name: &str) -> String {
     disqualified::ShortName(name).to_string()
 }
 
+/// Convenient wrapper for [`get_short_name`] which infers the type name from the type parameter.
 pub fn get_short_type_name<T>() -> String {
     get_short_name(std::any::type_name::<T>())
 }
