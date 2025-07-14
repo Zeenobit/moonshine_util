@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 
 pub mod diagnostics;
+pub mod event;
 pub mod expect;
 pub mod hierarchy;
 pub mod query;
@@ -11,6 +12,7 @@ pub mod system;
 pub mod prelude {
     //! Prelude module to import the most essential utilities.
 
+    pub use crate::event::{AddSingleObserver, SingleEvent, SingleTrigger};
     pub use crate::expect::Expect;
     pub use crate::hierarchy::WithChild;
     pub use crate::query::{Get, MapQuery};
