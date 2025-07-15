@@ -78,8 +78,9 @@ use moonshine_util::prelude::*;
 
 struct Height(f32);
 
-impl FromQuery for Height {
+impl MapQuery for Height {
     type Query = &'static GlobalTransform;
+    type Output = Self;
 
     fn map(data: &GlobalTransform) -> Self {
         Self(data.translation().y)
@@ -167,6 +168,35 @@ assert!(world.get_entity(outputs[0]).is_ok());
 assert!(world.get_entity(outputs[1]).is_ok());
 ```
 
+### [`SingleEvent`]
+
+A trait designed to behave like standard Bevy events. Unlike standard events, a [`SingleEvent`] may only be handled by a single observer.
+This allows the single observer to consume and mutate the event data as needed.
+
+```rust
+use bevy::prelude::*;
+use moonshine_util::prelude::*;
+
+struct BigEvent(/* ... */);
+
+impl SingleEvent for BigEvent {}
+
+fn big_event_plugin(app: &mut App) {
+    // Panics if there is another single observer registered for `BigEvent`:
+    app.add_single_observer(on_big_event);
+}
+
+fn trigger_big_event(mut commands: Commands) {
+    commands.trigger_single(BigEvent(/* ... */));
+}
+
+fn on_big_event(trigger: SingleTrigger<BigEvent>) {
+    let event: BigEvent = trigger.consume();
+    /* ... */
+}
+
+```
+
 ### [Utility Systems](https://docs.rs/moonshine-util/latest/moonshine_util/system/index.html)
 
 A growing collection of simple and generic systems useful for constructing larger system pipelines:
@@ -179,15 +209,6 @@ A growing collection of simple and generic systems useful for constructing large
 
 See [documentation](https://docs.rs/moonshine-util/latest/moonshine_util/system/index.html) for details and usage examples.
 
-## Installation
-
-Add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-moonshine-util = "0.2.7"
-```
-
 This crate is also included as part of [🍸 Moonshine Core](https://github.com/Zeenobit/moonshine_core).
 
 ## Support
@@ -196,9 +217,9 @@ Please [post an issue](https://github.com/Zeenobit/moonshine_util/issues/new) fo
 
 You may also contact me on the official [Bevy Discord](https://discord.gg/bevy) server as **@Zeenobit**.
 
-
 [`Expect<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/expect/struct.Expect.html
 [`Get<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/struct.Get.html
 [`FromQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/trait.FromQuery.html
 [`HierarchyQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html
 [`RunSystemLoop`]:https://docs.rs/moonshine-util/latest/moonshine_util/diagnostics/trait.RunSystemLoop.html
+[`SingleEvent`]:https://docs.rs/moonshine-util/latest/moonshine_util/event/struct.SingleEvent.html
