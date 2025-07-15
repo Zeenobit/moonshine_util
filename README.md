@@ -211,6 +211,12 @@ See [documentation](https://docs.rs/moonshine-util/latest/moonshine_util/system/
 
 This crate is also included as part of [🍸 Moonshine Core](https://github.com/Zeenobit/moonshine_core).
 
+## Changes
+
+### Version 0.3.2
+
+- Added [`SingleEvent`] feature
+
 ## Support
 
 Please [post an issue](https://github.com/Zeenobit/moonshine_util/issues/new) for any bugs, questions, or suggestions.
