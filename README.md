@@ -191,7 +191,7 @@ fn trigger_big_event(mut commands: Commands) {
 }
 
 fn on_big_event(trigger: SingleTrigger<BigEvent>) {
-    let event: BigEvent = trigger.consume();
+    let event: BigEvent = trigger.consume().unwrap();
     /* ... */
 }
 
