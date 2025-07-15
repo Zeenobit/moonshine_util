@@ -1,3 +1,5 @@
+//! Utilities related to Bevy [`Event`](bevy_ecs::event::Event) system.
+
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::IntoObserverSystem;
