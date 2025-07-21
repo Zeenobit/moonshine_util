@@ -10,6 +10,7 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
 use bevy_ecs::world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld};
+use bevy_platform::collections::HashMap;
 
 /// A [`QueryData`] decorator which panics if its inner query does not match.
 ///
@@ -94,16 +95,24 @@ pub struct Expect<T>(PhantomData<T>);
 impl<T: Component> Expect<T> {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         world.commands().queue(move |world: &mut World| {
-            let mut entity = world.entity_mut(ctx.entity);
-            let _ = entity.take::<Self>().unwrap();
-            if !entity.contains::<T>() {
-                panic!(
-                    "expected component of type `{}` does not exist on entity {:?}",
-                    std::any::type_name::<T>(),
-                    entity.id()
-                );
+            let expect = world.entity_mut(ctx.entity).take::<Self>().unwrap();
+            if let Some(mut deferred) = world.get_resource_mut::<ExpectDeferred>() {
+                deferred.add(ctx.entity, Box::new(expect));
+                return;
+            } else {
+                expect.validate(world.entity(ctx.entity));
             }
-        })
+        });
+    }
+
+    fn validate(self, entity: EntityRef) {
+        if !entity.contains::<T>() {
+            panic!(
+                "expected component of type `{}` does not exist on entity {:?}",
+                std::any::type_name::<T>(),
+                entity.id()
+            );
+        }
     }
 }
 
@@ -111,10 +120,6 @@ impl<T: Component> Component for Expect<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     type Mutability = Immutable;
-
-    // fn register_component_hooks(hooks: &mut ComponentHooks) {
-    //     hooks.on_add(Self::on_add);
-    // }
 
     fn on_add() -> Option<ComponentHook> {
         Some(Self::on_add)
@@ -124,6 +129,62 @@ impl<T: Component> Component for Expect<T> {
 impl<T: Component> Default for Expect<T> {
     fn default() -> Self {
         Self(Default::default())
+    }
+}
+
+trait ExpectValidate: 'static + Send + Sync {
+    fn validate(self: Box<Self>, entity: EntityRef);
+}
+
+impl<T: Component> ExpectValidate for Expect<T> {
+    fn validate(self: Box<Self>, entity: EntityRef) {
+        (*self).validate(entity);
+    }
+}
+
+/// When making many large changes to a world at once (such as when loading a saved world),
+/// the execution order of [`Expect`] component requirements is not reliable, leading to false panics.
+///
+/// This [`Resource`] solves this problem by deferring all [`Expect`] requirement checks until [`expect_deferred`] is called.
+///
+/// # Usage
+///
+/// You may run [`expect_deferred`] as a system, or invoke it manually as required.
+///
+/// If you are using [Moonshine Save](https://crates.io/crates/moonshine-save),
+/// [`LoadWorld`](https://docs.rs/moonshine-save/latest/moonshine_save/load/struct.LoadWorld.html)
+/// manages this automatically.
+#[derive(Resource, Default)]
+pub struct ExpectDeferred(HashMap<Entity, Vec<Box<dyn ExpectValidate>>>);
+
+impl ExpectDeferred {
+    fn add(&mut self, entity: Entity, expect: Box<dyn ExpectValidate>) {
+        self.0.entry(entity).or_default().push(expect);
+    }
+}
+
+/// Call this to resolve all [`ExpectDeferred`] requirement checks and removes the resource.
+///
+/// # Usage
+///
+/// See [`ExpectDeferred`] for usage details.
+///
+/// If you are using [Moonshine Save](https://crates.io/crates/moonshine-save),
+/// [`LoadWorld`](https://docs.rs/moonshine-save/latest/moonshine_save/load/struct.LoadWorld.html)
+/// calls this automatically.
+pub fn expect_deferred(world: &mut World) {
+    let Some(ExpectDeferred(requirements)) = world.remove_resource::<ExpectDeferred>() else {
+        return;
+    };
+
+    for (entity, expects) in requirements {
+        let Ok(entity) = world.get_entity(entity) else {
+            continue;
+        };
+
+        for expect in expects {
+            expect.validate(entity);
+        }
     }
 }
 

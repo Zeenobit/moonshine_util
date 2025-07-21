@@ -14,6 +14,7 @@ repository = "https://github.com/Zeenobit/moonshine_util"
 disqualified = "1.*"
 bevy_app = "0.16.*"
 bevy_ecs = "0.16.*"
+bevy_platform = "0.16.*"
 
 [dev-dependencies]
 bevy = "0.16.*"
