@@ -1,9 +1,7 @@
 //! Utilities related to relationship hierarchy traversal.
 
-use bevy_ecs::component::HookContext;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemParam;
-use bevy_ecs::world::DeferredWorld;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
 #[derive(SystemParam)]
