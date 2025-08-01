@@ -14,9 +14,8 @@ pub mod prelude {
 
     pub use crate::event::{AddSingleObserver, SingleEvent, SingleTrigger, TriggerSingle};
     pub use crate::expect::Expect;
-    pub use crate::hierarchy::WithChild;
     pub use crate::query::{Get, MapQuery};
-    pub use crate::spawn::SpawnUnrelated;
+    pub use crate::spawn::{SpawnUnrelated, WithChild};
 }
 
 /// Wrapper for [`disqualified::ShortName`] since it was removed from Bevy standard.
