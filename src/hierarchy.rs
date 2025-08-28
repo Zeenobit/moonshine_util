@@ -53,6 +53,69 @@ impl HierarchyQuery<'_, '_> {
     }
 }
 
+/// Iterator for breadth-first traversal of descendants
+pub struct WorldDescendantsWideIter<'w> {
+    world: &'w World,
+    queue: std::collections::VecDeque<Entity>,
+}
+
+impl<'w> WorldDescendantsWideIter<'w> {
+    pub fn new(world: &'w World, root: Entity) -> Self {
+        let mut queue = std::collections::VecDeque::new();
+
+        if let Some(children) = world.get::<Children>(root) {
+            queue.extend(children.iter());
+        }
+
+        Self { world, queue }
+    }
+}
+
+impl Iterator for WorldDescendantsWideIter<'_> {
+    type Item = Entity;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current = self.queue.pop_front()?;
+
+        if let Some(children) = self.world.get::<Children>(current) {
+            self.queue.extend(children.iter());
+        }
+
+        Some(current)
+    }
+}
+
+pub struct WorldDescendantsDeepIter<'w> {
+    world: &'w World,
+    stack: Vec<Entity>,
+}
+
+impl<'w> WorldDescendantsDeepIter<'w> {
+    pub fn new(world: &'w World, root: Entity) -> Self {
+        let mut stack = Vec::new();
+
+        if let Some(children) = world.get::<Children>(root) {
+            stack.extend(children.iter().rev());
+        }
+
+        Self { world, stack }
+    }
+}
+
+impl Iterator for WorldDescendantsDeepIter<'_> {
+    type Item = Entity;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current = self.stack.pop()?;
+
+        if let Some(children) = self.world.get::<Children>(current) {
+            self.stack.extend(children.iter().rev());
+        }
+
+        Some(current)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use bevy_ecs::system::RunSystemOnce;
@@ -152,6 +215,37 @@ mod tests {
     }
 
     #[test]
+    fn world_descendants_wide() {
+        #[derive(Component)]
+        struct A(usize);
+
+        let mut w = World::new();
+        let entity = w
+            .spawn(A(0))
+            .with_children(|a| {
+                a.spawn(A(1)).with_children(|b| {
+                    b.spawn(A(2)).with_children(|c| {
+                        c.spawn(A(3));
+                        c.spawn(A(4)).with_children(|d| {
+                            d.spawn(A(5));
+                        });
+                    });
+                    b.spawn(A(6)).with_children(|c| {
+                        c.spawn(A(7));
+                    });
+                });
+            })
+            .id();
+
+        let r: Vec<_> = WorldDescendantsWideIter::new(&w, entity)
+            .filter_map(|entity| w.get::<A>(entity))
+            .map(|&A(v)| v)
+            .collect();
+
+        assert_eq!(r, vec![1, 2, 6, 3, 4, 7, 5]);
+    }
+
+    #[test]
     fn descendants_deep() {
         #[derive(Component)]
         struct A(usize);
@@ -183,6 +277,37 @@ mod tests {
                 r
             })
             .unwrap();
+
+        assert_eq!(r, vec![1, 2, 3, 4, 5, 6, 7]);
+    }
+
+    #[test]
+    fn world_descendants_deep() {
+        #[derive(Component)]
+        struct A(usize);
+
+        let mut w = World::new();
+        let entity = w
+            .spawn(A(0))
+            .with_children(|a| {
+                a.spawn(A(1)).with_children(|b| {
+                    b.spawn(A(2)).with_children(|c| {
+                        c.spawn(A(3));
+                        c.spawn(A(4)).with_children(|d| {
+                            d.spawn(A(5));
+                        });
+                    });
+                    b.spawn(A(6)).with_children(|c| {
+                        c.spawn(A(7));
+                    });
+                });
+            })
+            .id();
+
+        let r: Vec<_> = WorldDescendantsDeepIter::new(&w, entity)
+            .filter_map(|entity| w.get::<A>(entity))
+            .map(|&A(v)| v)
+            .collect();
 
         assert_eq!(r, vec![1, 2, 3, 4, 5, 6, 7]);
     }
