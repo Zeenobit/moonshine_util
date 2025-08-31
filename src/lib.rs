@@ -7,6 +7,7 @@ pub mod event;
 pub mod expect;
 pub mod hierarchy;
 pub mod query;
+pub mod reflect;
 pub mod spawn;
 pub mod system;
 
@@ -17,6 +18,7 @@ pub mod prelude {
     pub use crate::event::{AddSingleObserver, SingleEvent, SingleTrigger, TriggerSingle};
     pub use crate::expect::Expect;
     pub use crate::query::{Get, MapQuery};
+    pub use crate::reflect::Registerable;
     pub use crate::spawn::{SpawnUnrelated, WithChild};
 }
 
