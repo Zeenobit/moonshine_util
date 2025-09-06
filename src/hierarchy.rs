@@ -60,6 +60,8 @@ pub struct WorldDescendantsWideIter<'w> {
 }
 
 impl<'w> WorldDescendantsWideIter<'w> {
+    /// Creates a new [`WorldDescendantsWideIter`] to iterate over all descendants of the given
+    /// [`Entity`] in breadth-first order.
     pub fn new(world: &'w World, root: Entity) -> Self {
         let mut queue = std::collections::VecDeque::new();
 
@@ -85,12 +87,15 @@ impl Iterator for WorldDescendantsWideIter<'_> {
     }
 }
 
+/// Iterator for depth-first traversal of descendants
 pub struct WorldDescendantsDeepIter<'w> {
     world: &'w World,
     stack: Vec<Entity>,
 }
 
 impl<'w> WorldDescendantsDeepIter<'w> {
+    /// Creates a new [`WorldDescendantsDeepIter`] to iterate over all descendants of the given
+    /// [`Entity`] in depth-first order.
     pub fn new(world: &'w World, root: Entity) -> Self {
         let mut stack = Vec::new();
 
