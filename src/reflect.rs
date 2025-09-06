@@ -1,4 +1,4 @@
-use bevy_reflect::{GetTypeRegistration, Typed};
+use bevy_reflect::{FromReflect, GetTypeRegistration, Typed};
 
 /// Convenient alias for [`GetTypeRegistration`] + [`Typed`].
 ///
@@ -19,6 +19,6 @@ use bevy_reflect::{GetTypeRegistration, Typed};
 ///     app.register_type::<A>();
 /// }
 /// ```
-pub trait Registerable: GetTypeRegistration + Typed {}
+pub trait Registerable: GetTypeRegistration + Typed + FromReflect {}
 
-impl<T: GetTypeRegistration + Typed> Registerable for T {}
+impl<T: GetTypeRegistration + Typed + FromReflect> Registerable for T {}
