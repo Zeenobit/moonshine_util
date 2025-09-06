@@ -21,28 +21,42 @@ impl Plugin for DefaultDeferredSystemsPlugin {
 }
 
 pub trait RunDeferredSystem {
-    fn run_deferred_system_with<S: ScheduleLabel, I, M>(
+    fn run_deferred_system<S: ScheduleLabel, M>(
+        &mut self,
+        schedule: S,
+        system: impl 'static + IntoSystem<(), (), M>,
+    );
+
+    fn run_deferred_system_with<S: ScheduleLabel, I: Static, M>(
         &mut self,
         schedule: S,
         system: impl 'static + IntoSystem<In<I>, (), M>,
         input: I,
-    ) where
-        I: Static;
+    );
 }
 
 impl RunDeferredSystem for World {
-    fn run_deferred_system_with<S: ScheduleLabel, I, M>(
+    fn run_deferred_system<S: ScheduleLabel, M>(
+        &mut self,
+        _schedule: S,
+        system: impl 'static + IntoSystem<(), (), M>,
+    ) {
+        let system = self.register_system_cached(system);
+        self.get_resource_or_init::<DeferredSystems<S>>()
+            .0
+            .push(Box::new(DeferredSystem(system)));
+    }
+
+    fn run_deferred_system_with<S: ScheduleLabel, I: Static, M>(
         &mut self,
         _schedule: S,
         system: impl 'static + IntoSystem<In<I>, (), M>,
         input: I,
-    ) where
-        I: Static,
-    {
+    ) {
         let system = self.register_system_cached(system);
         self.get_resource_or_init::<DeferredSystems<S>>()
             .0
-            .push(Box::new(DeferredSystem(system, input)));
+            .push(Box::new(DeferredSystemWith(system, input)));
     }
 }
 
@@ -71,9 +85,19 @@ trait AnyDeferredSystem: Static {
     fn run(self: Box<Self>, world: &mut World);
 }
 
-struct DeferredSystem<I: Static>(SystemId<In<I>>, I);
+struct DeferredSystem(SystemId);
 
-impl<I: Static> AnyDeferredSystem for DeferredSystem<I> {
+impl AnyDeferredSystem for DeferredSystem {
+    fn run(self: Box<Self>, world: &mut World) {
+        if let Err(why) = world.run_system(self.0) {
+            error!("deferred system error: {why}");
+        }
+    }
+}
+
+struct DeferredSystemWith<I: Static>(SystemId<In<I>>, I);
+
+impl<I: Static> AnyDeferredSystem for DeferredSystemWith<I> {
     fn run(self: Box<Self>, world: &mut World) {
         if let Err(why) = world.run_system_with(self.0, self.1) {
             error!("deferred system error: {why}");
