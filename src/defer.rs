@@ -1,3 +1,18 @@
+//! In Bevy it is possible to [register] and [run] systems manually using [`SystemId`].
+//!
+//! While this is useful enough, sometimes it may be necessary to defer a manual system
+//! execution until later during the update cycle.
+//!
+//! To solve this problem, you may use [`run_deferred_system`] to run a system manually in
+//! any [`Schedule`]. See [`RunDeferredSystem`] for more details and examples.
+//!
+//! Internally, this works by managing a queue of system IDs to be executed using
+//! [`run_deferred_systems`].
+//!
+//! [register]: bevy_ecs::world::World::register_system
+//! [run]: bevy_ecs::world::World::run_system
+//! [`run_deferred_system`]: RunDeferredSystem::run_deferred_system
+
 use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
@@ -8,6 +23,7 @@ use bevy_log::prelude::*;
 
 use crate::Static;
 
+/// A [`Plugin`] which adds the [`run_deferred_systems`]
 pub struct DefaultDeferredSystemsPlugin;
 
 impl Plugin for DefaultDeferredSystemsPlugin {
@@ -20,13 +36,41 @@ impl Plugin for DefaultDeferredSystemsPlugin {
     }
 }
 
+/// Trait used to run deferred systems via [`World`].
 pub trait RunDeferredSystem {
+    /// Queues the given [`System`] for a single execution in the given [`Schedule`].
+    ///
+    /// # Usage
+    ///
+    /// You must add [`DefaultDeferredSystemsPlugin`] for deferred system execution to work
+    /// in standard Bevy schedules. You may also add [`run_deferred_systems`] manually to any
+    /// [`Schedule`] to provide deferred system execution support for it.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy::prelude::*;
+    /// use bevy::ecs::world::DeferredWorld;
+    /// use bevy::ecs::component::HookContext
+    /// use moonshine_util::prelude::*;
+    ///
+    /// #[derive(Component)]
+    /// #[component(on_insert = on_insert_foo)]
+    /// struct Foo;
+    ///
+    /// fn on_insert_foo(mut world: DeferredWorld, ctx: HookContext) {
+    ///     world.run_system_deferred(PostUpdate, |query: Query<&Foo>| {
+    ///         // ...
+    ///     });
+    /// }
+    /// ```
     fn run_deferred_system<S: ScheduleLabel, M>(
         &mut self,
         schedule: S,
         system: impl 'static + IntoSystem<(), (), M>,
     );
 
+    /// Same as [`run_deferred_system`](RunDeferredSystem::run_deferred_system), but for systems with
+    /// input parameters.
     fn run_deferred_system_with<S: ScheduleLabel, I: Static, M>(
         &mut self,
         schedule: S,
@@ -105,6 +149,7 @@ impl<I: Static> AnyDeferredSystem for DeferredSystemWith<I> {
     }
 }
 
+/// A [`System`] which executes all deferred systems in the given [`Schedule`].
 pub fn run_deferred_systems<S: ScheduleLabel>(world: &mut World) {
     let Some(mut systems) = world.get_resource_mut::<DeferredSystems<S>>() else {
         return;

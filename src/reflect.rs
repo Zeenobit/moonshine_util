@@ -1,3 +1,5 @@
+//! Utilities related to reflection.
+
 use bevy_reflect::{FromReflect, GetTypeRegistration, Typed};
 
 /// Convenient alias for [`GetTypeRegistration`] + [`Typed`].
