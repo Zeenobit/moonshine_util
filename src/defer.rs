@@ -112,3 +112,30 @@ pub fn run_deferred_systems<S: ScheduleLabel>(world: &mut World) {
 
     systems.take().run(world);
 }
+
+#[test]
+fn test_deferred_system() {
+    use bevy::prelude::*;
+    use bevy::MinimalPlugins;
+
+    #[derive(Resource)]
+    struct Success;
+
+    let mut app = App::new();
+    app.add_plugins((MinimalPlugins, DefaultDeferredSystemsPlugin));
+
+    app.world_mut()
+        .run_deferred_system(Update, |mut commands: Commands| {
+            commands.insert_resource(Success)
+        });
+
+    app.world_mut().flush(); // Should be redundant, but just to be sure ...
+    assert!(!app.world().contains_resource::<Success>());
+
+    app.update();
+    assert!(app.world_mut().remove_resource::<Success>().is_some());
+
+    // Ensure the system does not run again
+    app.update();
+    assert!(!app.world().contains_resource::<Success>());
+}

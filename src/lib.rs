@@ -38,7 +38,7 @@ pub fn get_short_type_name<T>() -> String {
 /// Convenient alias for `'static + Send + Sync` because recently I've started mumbling
 /// `'static + Send + Sync` in my sleep. My doctor has recommended I use this trait instead.
 ///
-/// And so should you! It's clinically proven to reduce stress and relief wrist tension.
+/// And so should you! It's clinically proven to reduce stress and wrist tension.
 pub trait Static: 'static + Send + Sync {}
 
 impl<T: 'static + Send + Sync> Static for T {}
