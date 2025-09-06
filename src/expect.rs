@@ -12,6 +12,8 @@ use bevy_ecs::storage::{Table, TableRow};
 use bevy_ecs::world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld};
 use bevy_platform::collections::HashMap;
 
+use crate::Static;
+
 /// A [`QueryData`] decorator which panics if its inner query does not match.
 ///
 /// # Usage
@@ -132,7 +134,7 @@ impl<T: Component> Default for Expect<T> {
     }
 }
 
-trait ExpectValidate: 'static + Send + Sync {
+trait ExpectValidate: Static {
     fn validate(self: Box<Self>, entity: EntityRef);
 }
 

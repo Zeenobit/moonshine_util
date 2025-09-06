@@ -6,6 +6,8 @@ use bevy_ecs::schedule::ScheduleLabel;
 use bevy_ecs::system::SystemId;
 use bevy_log::prelude::*;
 
+use crate::Static;
+
 pub struct DefaultDeferredSystemsPlugin;
 
 impl Plugin for DefaultDeferredSystemsPlugin {
@@ -25,7 +27,7 @@ pub trait RunDeferredSystem {
         system: impl 'static + IntoSystem<In<I>, (), M>,
         input: I,
     ) where
-        I: 'static + Send + Sync;
+        I: Static;
 }
 
 impl RunDeferredSystem for World {
@@ -35,7 +37,7 @@ impl RunDeferredSystem for World {
         system: impl 'static + IntoSystem<In<I>, (), M>,
         input: I,
     ) where
-        I: 'static + Send + Sync,
+        I: Static,
     {
         let system = self.register_system_cached(system);
         self.get_resource_or_init::<DeferredSystems<S>>()
@@ -65,13 +67,13 @@ impl<S: ScheduleLabel> DeferredSystems<S> {
     }
 }
 
-trait AnyDeferredSystem: 'static + Send + Sync {
+trait AnyDeferredSystem: Static {
     fn run(self: Box<Self>, world: &mut World);
 }
 
-struct DeferredSystem<I: 'static + Send + Sync>(SystemId<In<I>>, I);
+struct DeferredSystem<I: Static>(SystemId<In<I>>, I);
 
-impl<I: 'static + Send + Sync> AnyDeferredSystem for DeferredSystem<I> {
+impl<I: Static> AnyDeferredSystem for DeferredSystem<I> {
     fn run(self: Box<Self>, world: &mut World) {
         if let Err(why) = world.run_system_with(self.0, self.1) {
             error!("deferred system error: {why}");

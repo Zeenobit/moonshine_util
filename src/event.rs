@@ -8,6 +8,8 @@ use std::sync::Mutex;
 
 use bevy_ecs::observer::Trigger;
 
+use crate::Static;
+
 /// An [`Event`]-like trait for events that may only trigger a single observer.
 ///
 /// # Usage
@@ -24,7 +26,7 @@ use bevy_ecs::observer::Trigger;
 /// - [`SingleTrigger`]
 /// - [`add_single_observer`](AddSingleObserver::add_single_observer)
 /// - [`trigger_single`](TriggerSingle::trigger_single)
-pub trait SingleEvent: 'static + Send + Sync {}
+pub trait SingleEvent: Static {}
 
 /// Trait used to register single observers for [`SingleEvent`]s.
 pub trait AddSingleObserver {

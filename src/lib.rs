@@ -20,6 +20,7 @@ pub mod prelude {
     pub use crate::query::{Get, MapQuery};
     pub use crate::reflect::Registerable;
     pub use crate::spawn::{SpawnUnrelated, WithChild};
+    pub use crate::Static;
 }
 
 /// Wrapper for [`disqualified::ShortName`] since it was removed from Bevy standard.
@@ -33,3 +34,11 @@ pub fn get_short_name(name: &str) -> String {
 pub fn get_short_type_name<T>() -> String {
     get_short_name(std::any::type_name::<T>())
 }
+
+/// Convenient alias for `'static + Send + Sync` because recently I've started mumbling
+/// `'static + Send + Sync` in my sleep. My doctor has recommended I use this trait instead.
+///
+/// And so should you! It's clinically proven to reduce stress and relief wrist tension.
+pub trait Static: 'static + Send + Sync {}
+
+impl<T: 'static + Send + Sync> Static for T {}
