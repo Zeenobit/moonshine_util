@@ -1,3 +1,5 @@
+//! Utilities related to [`Component`] management.
+
 use std::marker::PhantomData;
 use std::ops::AddAssign;
 
@@ -7,7 +9,13 @@ use bevy_ecs::world::DeferredWorld;
 
 use crate::Static;
 
+/// Any [`Component`] which can be merged with itself.
+///
+/// This trait is automatically implemented for any [`Component`] which also implements [`AddAssign`].
+///
+/// See [`Add<T>`] for detailed usage and examples.
 pub trait AddComponent: Component<Mutability = Mutable> {
+    /// Merges the contents of `other` into this [`Component`].
     fn add(&mut self, other: Self);
 }
 
@@ -17,15 +25,71 @@ impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
     }
 }
 
+/// An [`EntityCommand`] which is used to add components.
+///
+/// # Usage
+/// It is impossible to have duplicate components on an [`Entity`] in Bevy.
+/// However, in some cases, multiple instances of some components can be "merged" into one.
+///
+/// If a component implements [`AddComponent`], you can use this command to merge multiple instances
+/// of the component into one.
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// #[derive(Component, Default)]
+/// struct N(usize);
+///
+/// impl AddComponent for N {
+///     fn add(&mut self, rhs: Self) {
+///         self.0 += rhs.0;
+///     }
+/// }
+///
+/// let mut world = World::new();
+/// let entity = world.spawn_empty().id();
+/// world.commands().entity(entity).queue(Add(N(1)));
+/// world.commands().entity(entity).queue(Add(N(2)));
+/// world.flush();
+/// let &N(value) = world.get(entity).unwrap();
+/// assert_eq!(value, 3);
+/// ```
+///
+/// This command may also be used as a [`Component`] itself. This can be used in a [`Bundle`] or as a
+/// requirement to merge components.
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// #[derive(Component, Default)]
+/// struct N(usize);
+///
+/// impl AddComponent for N {
+///     fn add(&mut self, rhs: Self) {
+///         self.0 += rhs.0;
+///     }
+/// }
+///
+/// let mut world = World::new();
+/// let entity = world.spawn((N(1), Add(N(2))));
+/// let &N(value) = entity.get().unwrap();
+/// assert_eq!(value, 3);
+/// ```
+///
+/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
+/// However, because of the component uniqueness rule, multiple `Add<T>` instances may not exist on the same entity.
+///
+/// To work around this, you can use [`AddFrom`] and [`AddWith`].
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
 pub struct Add<T: AddComponent>(pub T);
 
 impl<T: AddComponent> Add<T> {
-    pub fn with<F: Static + FnOnce() -> R, R: Into<T>>(
-        f: F,
-    ) -> AddWith<T, impl Static + FnOnce() -> T> {
-        AddWith::new(|| f().into())
+    /// Ergonomic alias for [`AddWith::new`].
+    pub fn with<F: Static + FnOnce() -> T>(f: F) -> AddWith<T, impl Static + FnOnce() -> T> {
+        AddWith::new(f)
     }
 
     fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
@@ -55,6 +119,38 @@ impl<T: AddComponent> EntityCommand for Add<T> {
     }
 }
 
+/// A [`Component`] which is used to add components as requirements.
+///
+/// # Usage
+/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
+/// This type may instead be used to work around this restriction:
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// #[derive(Component, Default)]
+/// struct N(usize);
+///
+/// impl AddComponent for N {
+///     fn add(&mut self, rhs: Self) {
+///         self.0 += rhs.0;
+///     }
+/// }
+///
+/// #[derive(Component, Default)]
+/// #[require(AddFrom<Self, N> = N(1))]
+/// struct A;
+///
+/// #[derive(Component, Default)]
+/// #[require(A, AddFrom<Self, N> = N(2))]
+/// struct B;
+///
+/// let mut world = World::new();
+/// let entity = world.spawn(B);
+/// let &N(value) = entity.get().unwrap();
+/// assert_eq!(value, 3);
+/// ```
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
 pub struct AddFrom<M: Static, T: AddComponent>(Add<T>, PhantomData<M>);
@@ -76,12 +172,38 @@ impl<M: Static, T: AddComponent> From<T> for AddFrom<M, T> {
         Self(Add(value), PhantomData)
     }
 }
-
+/// A [`Component`] which is used to add components as requirements.
+///
+/// # Usage
+/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
+/// This type may instead be used to work around this restriction:
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// #[derive(Component, Default)]
+/// struct N(usize);
+///
+/// impl AddComponent for N {
+///     fn add(&mut self, rhs: Self) {
+///         self.0 += rhs.0;
+///     }
+/// }
+///
+/// let mut world = World::new();
+/// let entity = world.spawn((Add::with(|| N(1)), Add::with(|| N(2))));
+/// let &N(value) = entity.get().unwrap();
+/// assert_eq!(value, 3);
+/// ```
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
 pub struct AddWith<T: AddComponent, F: Static + FnOnce() -> T>(F, PhantomData<T>);
 
 impl<F: Static + FnOnce() -> T, T: AddComponent> AddWith<T, F> {
+    /// Creates a new [`AddWith`] [`Component`] for the given [`FnOnce`].
+    ///
+    /// See [`Add::with`] for a more ergonomic constructor.
     pub fn new(f: F) -> Self {
         Self(f, PhantomData)
     }
