@@ -15,7 +15,7 @@ pub mod system;
 pub mod prelude {
     //! Prelude module to import the most essential utilities.
 
-    pub use crate::component::{Add, AddComponent};
+    pub use crate::component::{Add, AddComponent, AddFrom, AddWith};
     pub use crate::defer::{run_deferred_systems, RunDeferredSystem};
     pub use crate::event::{AddSingleObserver, SingleEvent, SingleTrigger, TriggerSingle};
     pub use crate::expect::Expect;

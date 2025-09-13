@@ -22,6 +22,12 @@ impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
 pub struct Add<T: AddComponent>(pub T);
 
 impl<T: AddComponent> Add<T> {
+    pub fn with<F: Static + FnOnce() -> R, R: Into<T>>(
+        f: F,
+    ) -> AddWith<T, impl Static + FnOnce() -> T> {
+        AddWith::new(|| f().into())
+    }
+
     fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
         world
             .commands()
@@ -68,6 +74,32 @@ impl<M: Static, T: AddComponent> AddFrom<M, T> {
 impl<M: Static, T: AddComponent> From<T> for AddFrom<M, T> {
     fn from(value: T) -> Self {
         Self(Add(value), PhantomData)
+    }
+}
+
+#[derive(Component)]
+#[component(on_insert = Self::on_insert)]
+pub struct AddWith<T: AddComponent, F: Static + FnOnce() -> T>(F, PhantomData<T>);
+
+impl<F: Static + FnOnce() -> T, T: AddComponent> AddWith<T, F> {
+    pub fn new(f: F) -> Self {
+        Self(f, PhantomData)
+    }
+
+    fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
+        world
+            .commands()
+            .entity(ctx.entity)
+            .queue(|mut entity: EntityWorldMut| {
+                let Self(f, ..) = entity.take::<Self>().unwrap();
+                Add(f()).apply(entity);
+            });
+    }
+}
+
+impl<F: Static + FnOnce() -> T, T: AddComponent> From<F> for AddWith<T, F> {
+    fn from(f: F) -> Self {
+        Self::new(f)
     }
 }
 
