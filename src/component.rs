@@ -257,11 +257,27 @@ macro_rules! relationship {
             $source_vis:vis $source:ident($source_inner_vis:vis $source_inner:ty)
         }
     } => {
+        relationship! {
+            $(#[$target_attr])* $target_vis $target($target_inner_vis $target_inner) -> [] {
+                $(#[$source_attr])* $source_vis $source($source_inner_vis $source_inner)
+            }
+        }
+    };
 
+    {
+        $(#[$target_attr:meta])*
+        $target_vis:vis $target:ident($target_inner_vis:vis $target_inner:ty)
+        -> [$($options:expr),*] {
+            $(#[$source_attr:meta])*
+            $source_vis:vis $source:ident($source_inner_vis:vis $source_inner:ty)
+        }
+    } => {
+        $(#[$target_attr])*
         #[derive(Component)]
-        #[relationship_target(relationship = $source)]
+        #[relationship_target(relationship = $source, $($options),*)]
         $target_vis struct $target($target_inner_vis $target_inner);
 
+        $(#[$source_attr])*
         #[derive(Component)]
         #[relationship(relationship_target = $target)]
         $source_vis struct $source($source_inner_vis $source_inner);
@@ -296,4 +312,22 @@ fn test_add_component() {
     let &N(v) = e.get().unwrap();
 
     assert_eq!(v, 3);
+}
+
+#[test]
+fn test_relationship_linked_spawn() {
+    relationship! {
+        pub Owner(Vec<Entity>) -> [linked_spawn] {
+            pub OwnedBy(pub Entity)
+        }
+    }
+
+    let mut w = World::new();
+    let a = w.spawn_empty().id();
+    let b = w.spawn(OwnedBy(a)).id();
+    assert_eq!(w.get::<Owner>(a).unwrap().0[0], b);
+    assert!(w.entities().contains(b));
+
+    w.entity_mut(a).despawn();
+    assert!(!w.entities().contains(b));
 }
