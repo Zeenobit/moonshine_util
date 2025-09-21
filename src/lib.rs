@@ -23,6 +23,8 @@ pub mod prelude {
     pub use crate::reflect::Registerable;
     pub use crate::spawn::{SpawnUnrelated, WithChild};
     pub use crate::Static;
+
+    pub use crate::relationship;
 }
 
 /// Wrapper for [`disqualified::ShortName`] since it was removed from Bevy standard.

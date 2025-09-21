@@ -225,6 +225,49 @@ impl<F: Static + FnOnce() -> T, T: AddComponent> From<F> for AddWith<T, F> {
     }
 }
 
+/// A convenient macro for defining a pair of [`Relationship`] and [`RelationshipTarget`] component.
+///
+/// ```rust
+/// use bevy::prelude::*;
+/// use moonshine_util::prelude::*;
+///
+/// relationship! {
+///     #[derive(Default)]
+///     pub Friends(Vec<Entity>) -> { pub FriendOf(pub Entity) }
+/// }
+///
+/// let mut w = World::new();
+/// let a = w.spawn_empty().id();
+/// let b = w.spawn(FriendOf(a)).id();
+///
+/// assert!(w
+///     .get::<Friends>(a)
+///     .is_some_and(|Friends(friends)| friends[0] == b));
+/// ```
+///
+/// [`Relationship`]: bevy_ecs::relationship::Relationship
+/// [`RelationshipTarget`]: bevy_ecs::relationship::RelationshipTarget
+#[macro_export]
+macro_rules! relationship {
+    {
+        $(#[$target_attr:meta])*
+        $target_vis:vis $target:ident($target_inner_vis:vis $target_inner:ty)
+        -> {
+            $(#[$source_attr:meta])*
+            $source_vis:vis $source:ident($source_inner_vis:vis $source_inner:ty)
+        }
+    } => {
+
+        #[derive(Component)]
+        #[relationship_target(relationship = $source)]
+        $target_vis struct $target($target_inner_vis $target_inner);
+
+        #[derive(Component)]
+        #[relationship(relationship_target = $target)]
+        $source_vis struct $source($source_inner_vis $source_inner);
+    };
+}
+
 #[test]
 fn test_add_component() {
     #[derive(Component, Default)]
