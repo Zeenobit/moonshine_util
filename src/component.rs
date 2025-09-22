@@ -251,10 +251,10 @@ impl<F: Static + FnOnce() -> T, T: AddComponent> From<F> for AddWith<T, F> {
 macro_rules! relationship {
     {
         $(#[$target_attr:meta])*
-        $target_vis:vis $target:ident($target_inner_vis:vis $target_inner:ty)
+        $target_vis:vis $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
         -> {
             $(#[$source_attr:meta])*
-            $source_vis:vis $source:ident($source_inner_vis:vis $source_inner:ty)
+            $source_vis:vis $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
         }
     } => {
         relationship! {
@@ -266,21 +266,21 @@ macro_rules! relationship {
 
     {
         $(#[$target_attr:meta])*
-        $target_vis:vis $target:ident($target_inner_vis:vis $target_inner:ty)
+        $target_vis:vis $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
         -> [$($options:expr),*] {
             $(#[$source_attr:meta])*
-            $source_vis:vis $source:ident($source_inner_vis:vis $source_inner:ty)
+            $source_vis:vis $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
         }
     } => {
         $(#[$target_attr])*
         #[derive(Component)]
         #[relationship_target(relationship = $source, $($options),*)]
-        $target_vis struct $target($target_inner_vis $target_inner);
+        $target_vis struct $target($(#[$target_inner_attr])* $target_inner_vis $target_inner);
 
         $(#[$source_attr])*
         #[derive(Component)]
         #[relationship(relationship_target = $target)]
-        $source_vis struct $source($source_inner_vis $source_inner);
+        $source_vis struct $source($(#[$source_inner_attr])* $source_inner_vis $source_inner);
     };
 }
 
