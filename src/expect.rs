@@ -98,11 +98,12 @@ impl<T: Component> Expect<T> {
     fn on_add(mut world: DeferredWorld, ctx: HookContext) {
         world.commands().queue(move |world: &mut World| {
             let expect = world.entity_mut(ctx.entity).take::<Self>().unwrap();
-            if let Some(mut deferred) = world.get_resource_mut::<ExpectDeferred>() {
-                deferred.add(ctx.entity, Box::new(expect));
-                return;
+            let entity = world.entity(ctx.entity);
+            if world.contains_resource::<ExpectDeferred>() || entity.contains::<ExpectDeferred>() {
+                let mut buffer = world.get_resource_or_init::<ExpectDeferredBuffer>();
+                buffer.add(ctx.entity, Box::new(expect));
             } else {
-                expect.validate(world.entity(ctx.entity));
+                expect.validate(entity);
             }
         });
     }
@@ -149,6 +150,9 @@ impl<T: Component> ExpectValidate for Expect<T> {
 ///
 /// This [`Resource`] solves this problem by deferring all [`Expect`] requirement checks until [`expect_deferred`] is called.
 ///
+/// You may also use [`ExpectDeferred`] as a [`Component`]. Doing so will defer all [`Expect`] checks until
+/// `ExpectDeferred` is removed from that [`Entity`].
+///
 /// # Usage
 ///
 /// You may run [`expect_deferred`] as a system, or invoke it manually as required.
@@ -156,10 +160,33 @@ impl<T: Component> ExpectValidate for Expect<T> {
 /// If you are using [Moonshine Save](https://crates.io/crates/moonshine-save),
 /// [`LoadWorld`](https://docs.rs/moonshine-save/latest/moonshine_save/load/struct.LoadWorld.html)
 /// manages this automatically.
-#[derive(Resource, Default)]
-pub struct ExpectDeferred(HashMap<Entity, Vec<Box<dyn ExpectValidate>>>);
+#[derive(Resource, Component, Default)]
+#[component(on_remove = Self::on_remove)]
+pub struct ExpectDeferred;
 
 impl ExpectDeferred {
+    fn on_remove(mut world: DeferredWorld, ctx: HookContext) {
+        world.commands().queue(move |world: &mut World| {
+            let Some(mut buffer) = world.get_resource_mut::<ExpectDeferredBuffer>() else {
+                return;
+            };
+
+            let Some(expects) = buffer.0.remove(&ctx.entity) else {
+                return;
+            };
+
+            let entity = world.entity(ctx.entity);
+            for expect in expects {
+                expect.validate(entity);
+            }
+        });
+    }
+}
+
+#[derive(Resource, Default)]
+struct ExpectDeferredBuffer(HashMap<Entity, Vec<Box<dyn ExpectValidate>>>);
+
+impl ExpectDeferredBuffer {
     fn add(&mut self, entity: Entity, expect: Box<dyn ExpectValidate>) {
         self.0.entry(entity).or_default().push(expect);
     }
@@ -175,19 +202,25 @@ impl ExpectDeferred {
 /// [`LoadWorld`](https://docs.rs/moonshine-save/latest/moonshine_save/load/struct.LoadWorld.html)
 /// calls this automatically.
 pub fn expect_deferred(world: &mut World) {
-    let Some(ExpectDeferred(requirements)) = world.remove_resource::<ExpectDeferred>() else {
+    let Some(ExpectDeferredBuffer(buffer)) = world.remove_resource::<ExpectDeferredBuffer>() else {
         return;
     };
 
-    for (entity, expects) in requirements {
+    for (entity, expects) in buffer {
         let Ok(entity) = world.get_entity(entity) else {
             continue;
         };
+
+        if entity.contains::<ExpectDeferred>() {
+            continue;
+        }
 
         for expect in expects {
             expect.validate(entity);
         }
     }
+
+    let _ = world.remove_resource::<ExpectDeferred>();
 }
 
 #[doc(hidden)]
@@ -313,18 +346,52 @@ mod tests {
 
     use super::*;
 
-    #[derive(Component)]
+    #[derive(Default, Component)]
     struct A;
 
-    #[derive(Component)]
+    #[derive(Default, Component)]
     struct B;
 
     #[test]
     #[should_panic]
-    fn expected_component() {
+    fn expect_query_panic() {
         let mut w = World::default();
         w.spawn(A);
         w.run_system_once(|q: Query<(&A, Expect<&B>)>| for _ in q.iter() {})
             .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn expect_require_panic() {
+        #[derive(Component)]
+        #[require(Expect<B>)]
+        struct C;
+
+        let mut w = World::default();
+        w.spawn(C);
+    }
+
+    #[test]
+    fn expect_deferred() {
+        #[derive(Component)]
+        #[require(Expect<B>)]
+        struct C;
+
+        let mut w = World::default();
+        let e = w.spawn((ExpectDeferred, C)).id();
+        w.entity_mut(e).insert(B).remove::<ExpectDeferred>();
+    }
+
+    #[test]
+    #[should_panic]
+    fn expect_deferred_panic() {
+        #[derive(Component)]
+        #[require(Expect<B>)]
+        struct C;
+
+        let mut w = World::default();
+        let e = w.spawn((ExpectDeferred, C)).id();
+        w.entity_mut(e).remove::<ExpectDeferred>();
     }
 }
