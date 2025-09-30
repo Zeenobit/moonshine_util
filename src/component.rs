@@ -109,7 +109,7 @@ impl<T: AddComponent> From<T> for Add<T> {
 }
 
 impl<T: AddComponent> EntityCommand for Add<T> {
-    fn apply(self, mut entity: EntityWorldMut) -> () {
+    fn apply(self, mut entity: EntityWorldMut) {
         let Self(source) = self;
         if let Some(mut target) = entity.get_mut::<T>() {
             target.add(source);

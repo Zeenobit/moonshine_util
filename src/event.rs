@@ -1,4 +1,4 @@
-//! Utilities related to Bevy [`Event`](bevy_ecs::event::Event) system.
+//! Utilities related to Bevy [`Event`] system.
 
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;

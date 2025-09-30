@@ -19,6 +19,7 @@ use bevy_app::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_ecs::schedule::ScheduleLabel;
 use bevy_ecs::system::SystemId;
+use bevy_ecs::world::DeferredWorld;
 use bevy_log::prelude::*;
 
 use crate::Static;
@@ -50,7 +51,7 @@ pub trait RunDeferredSystem {
     /// ```
     /// use bevy::prelude::*;
     /// use bevy::ecs::world::DeferredWorld;
-    /// use bevy::ecs::component::HookContext
+    /// use bevy::ecs::component::HookContext;
     /// use moonshine_util::prelude::*;
     ///
     /// #[derive(Component)]
@@ -58,7 +59,7 @@ pub trait RunDeferredSystem {
     /// struct Foo;
     ///
     /// fn on_insert_foo(mut world: DeferredWorld, ctx: HookContext) {
-    ///     world.run_system_deferred(PostUpdate, |query: Query<&Foo>| {
+    ///     world.run_deferred_system(PostUpdate, |query: Query<&Foo>| {
     ///         // ...
     ///     });
     /// }
@@ -66,7 +67,7 @@ pub trait RunDeferredSystem {
     fn run_deferred_system<S: ScheduleLabel, M>(
         &mut self,
         schedule: S,
-        system: impl 'static + IntoSystem<(), (), M>,
+        system: impl Static + IntoSystem<(), (), M>,
     );
 
     /// Same as [`run_deferred_system`](RunDeferredSystem::run_deferred_system), but for systems with
@@ -74,7 +75,7 @@ pub trait RunDeferredSystem {
     fn run_deferred_system_with<S: ScheduleLabel, I: Static, M>(
         &mut self,
         schedule: S,
-        system: impl 'static + IntoSystem<In<I>, (), M>,
+        system: impl Static + IntoSystem<In<I>, (), M>,
         input: I,
     );
 }
@@ -83,7 +84,7 @@ impl RunDeferredSystem for World {
     fn run_deferred_system<S: ScheduleLabel, M>(
         &mut self,
         _schedule: S,
-        system: impl 'static + IntoSystem<(), (), M>,
+        system: impl Static + IntoSystem<(), (), M>,
     ) {
         let system = self.register_system_cached(system);
         self.get_resource_or_init::<DeferredSystems<S>>()
@@ -101,6 +102,28 @@ impl RunDeferredSystem for World {
         self.get_resource_or_init::<DeferredSystems<S>>()
             .0
             .push(Box::new(DeferredSystemWith(system, input)));
+    }
+}
+
+impl RunDeferredSystem for DeferredWorld<'_> {
+    fn run_deferred_system<S: ScheduleLabel, M>(
+        &mut self,
+        schedule: S,
+        system: impl Static + IntoSystem<(), (), M>,
+    ) {
+        self.commands()
+            .queue(move |world: &mut World| world.run_deferred_system(schedule, system));
+    }
+
+    fn run_deferred_system_with<S: ScheduleLabel, I: Static, M>(
+        &mut self,
+        schedule: S,
+        system: impl Static + IntoSystem<In<I>, (), M>,
+        input: I,
+    ) {
+        self.commands().queue(move |world: &mut World| {
+            world.run_deferred_system_with(schedule, system, input)
+        });
     }
 }
 

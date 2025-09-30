@@ -34,9 +34,8 @@ where
 
 /// A [`Component`] which spawns a child [`Entity`] when inserted into some parent.
 ///
-/// Unlike [`Children::spawn`] (and by extension [`children!`]), each instance of this component is unique.
-/// This allows you to have multiple instances of it within the same bundle to spawn multiple
-/// children independently of each other.
+/// Unlike [`Children::spawn`](SpawnRelated::spawn) (and by extension [`children!`]), each instance
+/// of this component is unique, allowing you to have multiple instances of it in the same bundle.
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 #[component(on_add = Self::on_add)]

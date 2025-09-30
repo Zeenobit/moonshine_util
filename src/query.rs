@@ -22,7 +22,7 @@ pub trait MapQuery {
     fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self::Output;
 }
 
-/// A query decorator which maps some query data into `T` using [`FromQuery`].
+/// A query decorator which maps some query data into `T` using [`MapQuery`].
 ///
 /// This is useful for when you want to compute a processed value from some query data.
 ///
