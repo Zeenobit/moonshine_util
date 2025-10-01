@@ -19,7 +19,7 @@ pub trait MapQuery {
     type Output;
 
     /// Called at the time of query execution to map the query data into `Self`.
-    fn map(data: <Self::Query as QueryData>::Item<'_>) -> Self::Output;
+    fn map(data: <Self::Query as QueryData>::Item<'_, '_>) -> Self::Output;
 }
 
 /// A query decorator which maps some query data into `T` using [`MapQuery`].
@@ -92,7 +92,7 @@ unsafe impl<T: MapQuery> WorldQuery for Get<T> {
         unsafe { T::Query::set_table(fetch, state, table) }
     }
 
-    fn update_component_access(state: &Self::State, access: &mut FilteredAccess<ComponentId>) {
+    fn update_component_access(state: &Self::State, access: &mut FilteredAccess) {
         T::Query::update_component_access(state, access)
     }
 
@@ -117,18 +117,21 @@ unsafe impl<T: MapQuery> QueryData for Get<T> {
 
     const IS_READ_ONLY: bool = <T::Query as QueryData>::IS_READ_ONLY;
 
-    type Item<'a> = T::Output;
+    type Item<'w, 's> = T::Output;
 
-    fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: Self::Item<'wlong, 's>,
+    ) -> Self::Item<'wshort, 's> {
         item
     }
 
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
-        T::map(T::Query::fetch(fetch, entity, table_row))
+    ) -> Self::Item<'w, 's> {
+        T::map(T::Query::fetch(state, fetch, entity, table_row))
     }
 }
 

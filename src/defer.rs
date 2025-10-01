@@ -51,7 +51,7 @@ pub trait RunDeferredSystem {
     /// ```
     /// use bevy::prelude::*;
     /// use bevy::ecs::world::DeferredWorld;
-    /// use bevy::ecs::component::HookContext;
+    /// use bevy::ecs::lifecycle::HookContext;
     /// use moonshine_util::prelude::*;
     ///
     /// #[derive(Component)]

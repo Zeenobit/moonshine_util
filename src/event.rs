@@ -6,8 +6,6 @@ use bevy_ecs::system::IntoObserverSystem;
 use std::marker::PhantomData;
 use std::sync::Mutex;
 
-use bevy_ecs::observer::Trigger;
-
 use crate::Static;
 
 /// An [`Event`]-like trait for events that may only trigger a single observer.
@@ -23,7 +21,7 @@ use crate::Static;
 /// For these cases, you can use the [`SingleEvent`] trait which.
 ///
 /// See also:
-/// - [`SingleTrigger`]
+/// - [`OnSingle`]
 /// - [`add_single_observer`](AddSingleObserver::add_single_observer)
 /// - [`trigger_single`](TriggerSingle::trigger_single)
 pub trait SingleEvent: Static {}
@@ -75,34 +73,34 @@ pub trait TriggerSingle {
 
 impl TriggerSingle for &mut Commands<'_, '_> {
     fn trigger_single<E: SingleEvent>(self, event: E) {
-        self.trigger(OnSingleEvent::new(event));
+        self.trigger(SingleEventWrapper::new(event));
     }
 }
 
 impl TriggerSingle for &mut World {
     fn trigger_single<E: SingleEvent>(self, event: E) {
-        self.trigger(OnSingleEvent::new(event));
+        self.trigger(SingleEventWrapper::new(event));
     }
 }
 
 #[doc(hidden)]
 pub trait IntoSingleObserverSystem<E: SingleEvent, B: Bundle, M>:
-    IntoObserverSystem<OnSingleEvent<E>, B, M>
+    IntoObserverSystem<SingleEventWrapper<E>, B, M>
 {
 }
 
 impl<E: SingleEvent, B: Bundle, M, S> IntoSingleObserverSystem<E, B, M> for S where
-    S: IntoObserverSystem<OnSingleEvent<E>, B, M>
+    S: IntoObserverSystem<SingleEventWrapper<E>, B, M>
 {
 }
 
 /// A standard [`Event`] which contains a [`SingleEvent`].
 ///
-/// You should avoid using this directly and instead use [`SingleTrigger`] for better ergonomics.
+/// You should avoid using this directly and instead use [`OnSingle`] for better ergonomics.
 #[derive(Event)]
-pub struct OnSingleEvent<E: SingleEvent>(Mutex<Option<E>>);
+pub struct SingleEventWrapper<E: SingleEvent>(Mutex<Option<E>>);
 
-impl<E: SingleEvent> OnSingleEvent<E> {
+impl<E: SingleEvent> SingleEventWrapper<E> {
     fn new(event: E) -> Self {
         Self(Mutex::new(Some(event)))
     }
@@ -117,8 +115,8 @@ impl<E: SingleEvent> OnSingleEvent<E> {
 
 /// Trigger for [`SingleEvent`] types.
 ///
-/// Usage is identical to [`Trigger`] but with the addition of the [`consume`](OnSingleEvent::consume) method.
-pub type SingleTrigger<'w, E, B = ()> = Trigger<'w, OnSingleEvent<E>, B>;
+/// Usage is identical to [`On`] but with the addition of the [`consume`](SingleEventWrapper::consume) method.
+pub type OnSingle<'w, 't, E, B = ()> = On<'w, 't, SingleEventWrapper<E>, B>;
 
 #[doc(hidden)]
 pub struct SingleEventObserverPlugin<E: SingleEvent>(PhantomData<E>);

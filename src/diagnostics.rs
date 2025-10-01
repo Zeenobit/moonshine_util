@@ -1,6 +1,7 @@
 //! Utilities for diagnostics and testing.
 
 use bevy_ecs::prelude::*;
+use bevy_ecs::system::RunSystemError;
 
 /// A trait similar to [`bevy_ecs::system::RunSystemOnce`], but it runs a system multiple times.
 ///
@@ -25,7 +26,7 @@ pub trait RunSystemLoop: Sized {
         self,
         n: usize,
         system: T,
-    ) -> Vec<Out> {
+    ) -> Vec<Result<Out, RunSystemError>> {
         self.run_system_loop_with(n, || (), system)
     }
 
@@ -59,7 +60,7 @@ pub trait RunSystemLoop: Sized {
         n: usize,
         input: InputSource,
         system: T,
-    ) -> Vec<Out>
+    ) -> Vec<Result<Out, RunSystemError>>
     where
         InputSource: FnMut() -> I::Inner<'static>;
 }
@@ -76,7 +77,7 @@ impl RunSystemLoop for &mut World {
         n: usize,
         mut input: InputSource,
         system: T,
-    ) -> Vec<Out>
+    ) -> Vec<Result<Out, RunSystemError>>
     where
         InputSource: FnMut() -> I::Inner<'static>,
     {

@@ -164,8 +164,9 @@ let outputs = world.run_system_loop(2, |mut commands: Commands| {
 
 assert_eq!(outputs.len(), 2);
 
-assert!(world.get_entity(outputs[0]).is_ok());
-assert!(world.get_entity(outputs[1]).is_ok());
+let mut it = outputs.into_iter().map(Result::unwrap);
+assert!(world.get_entity(it.next().unwrap()).is_ok());
+assert!(world.get_entity(it.next().unwrap()).is_ok());
 ```
 
 ### [`SingleEvent`]
@@ -190,8 +191,8 @@ fn trigger_big_event(mut commands: Commands) {
     commands.trigger_single(BigEvent(/* ... */));
 }
 
-fn on_big_event(trigger: SingleTrigger<BigEvent>) {
-    let event: BigEvent = trigger.consume().unwrap();
+fn on_big_event(event: OnSingle<BigEvent>) {
+    let event: BigEvent = event.consume().unwrap();
     /* ... */
 }
 

@@ -1,6 +1,6 @@
 //! Utilities related to spawning entities.
 
-use bevy_ecs::component::HookContext;
+use bevy_ecs::lifecycle::HookContext;
 use bevy_ecs::prelude::*;
 use bevy_ecs::world::DeferredWorld;
 

@@ -3,9 +3,8 @@
 use std::marker::PhantomData;
 
 use bevy_ecs::archetype::Archetype;
-use bevy_ecs::component::{
-    ComponentHook, ComponentId, Components, HookContext, Immutable, StorageType, Tick,
-};
+use bevy_ecs::component::{ComponentId, Components, Immutable, StorageType, Tick};
+use bevy_ecs::lifecycle::{ComponentHook, HookContext};
 use bevy_ecs::prelude::*;
 use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
@@ -243,20 +242,23 @@ unsafe impl<T: QueryData> QueryData for Expect<T> {
 
     const IS_READ_ONLY: bool = true;
 
-    type Item<'a> = T::Item<'a>;
+    type Item<'w, 's> = T::Item<'w, 's>;
 
-    fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: Self::Item<'wlong, 's>,
+    ) -> Self::Item<'wshort, 's> {
         T::shrink(item)
     }
 
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
+    ) -> Self::Item<'w, 's> {
         let item = fetch
             .matches
-            .then(|| T::fetch(&mut fetch.fetch, entity, table_row));
+            .then(|| T::fetch(state, &mut fetch.fetch, entity, table_row));
         if let Some(item) = item {
             item
         } else {
@@ -318,7 +320,7 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
         }
     }
 
-    fn update_component_access(state: &T::State, access: &mut FilteredAccess<ComponentId>) {
+    fn update_component_access(state: &T::State, access: &mut FilteredAccess) {
         let mut intermediate = access.clone();
         T::update_component_access(state, &mut intermediate);
         access.extend_access(&intermediate);

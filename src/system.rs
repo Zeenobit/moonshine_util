@@ -30,21 +30,21 @@ pub fn has_resource<T: Resource>(resource: Option<Res<T>>) -> bool {
 /// # Example
 /// ```
 /// use bevy::prelude::*;
-/// use moonshine_util::system::has_event;
+/// use moonshine_util::system::has_message;
 ///
-/// #[derive(Event)]
-/// struct E;
+/// #[derive(Message)]
+/// struct M;
 ///
-/// fn system(mut events: EventReader<E>) {
-///     assert!(events.read().next().is_some());
+/// fn system(mut reader: MessageReader<M>) {
+///     assert!(reader.read().next().is_some());
 /// }
 ///
 /// let mut app = App::new();
-/// app.add_plugins(MinimalPlugins).add_event::<E>();
-/// app.add_systems(Update, system.run_if(has_event::<E>));
+/// app.add_plugins(MinimalPlugins).add_message::<M>();
+/// app.add_systems(Update, system.run_if(has_message::<M>));
 /// app.update(); // If event isn't dispatched (it wasn't), system will panic!
 /// ```
-pub fn has_event<T: Event>(events: EventReader<T>) -> bool {
+pub fn has_message<T: Message>(events: MessageReader<T>) -> bool {
     !events.is_empty()
 }
 

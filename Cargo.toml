@@ -11,12 +11,12 @@ homepage = "https://github.com/Zeenobit/moonshine_util"
 repository = "https://github.com/Zeenobit/moonshine_util"
 
 [dependencies]
-disqualified = "1.*"
-bevy_app = "0.16.*"
-bevy_ecs = "0.16.*"
-bevy_platform = "0.16.*"
-bevy_reflect = "0.16.*"
-bevy_log = "0.16.*"
+disqualified = "1"
+bevy_app = "0.17"
+bevy_ecs = "0.17"
+bevy_platform = "0.17"
+bevy_reflect = "0.17"
+bevy_log = "0.17"
 
 [dev-dependencies]
-bevy = "0.16.*"
+bevy = "0.17"

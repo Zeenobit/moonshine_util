@@ -1,9 +1,9 @@
 //! Utilities related to [`Component`] management.
 
 use std::marker::PhantomData;
-use std::ops::AddAssign;
 
-use bevy_ecs::component::{HookContext, Mutable};
+use bevy_ecs::component::Mutable;
+use bevy_ecs::lifecycle::HookContext;
 use bevy_ecs::prelude::*;
 use bevy_ecs::world::DeferredWorld;
 
@@ -11,18 +11,10 @@ use crate::Static;
 
 /// Any [`Component`] which can be merged with itself.
 ///
-/// This trait is automatically implemented for any [`Component`] which also implements [`AddAssign`].
-///
-/// See [`Add<T>`] for detailed usage and examples.
-pub trait AddComponent: Component<Mutability = Mutable> {
+/// See [`Merge<T>`] for detailed usage and examples.
+pub trait MergeComponent: Component<Mutability = Mutable> {
     /// Merges the contents of `other` into this [`Component`].
-    fn add(&mut self, other: Self);
-}
-
-impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
-    fn add(&mut self, other: Self) {
-        *self += other;
-    }
+    fn merge(&mut self, other: Self);
 }
 
 /// An [`EntityCommand`] which is used to add components.
@@ -31,7 +23,7 @@ impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
 /// It is impossible to have duplicate components on an [`Entity`] in Bevy.
 /// However, in some cases, multiple instances of some components can be "merged" into one.
 ///
-/// If a component implements [`AddComponent`], you can use this command to merge multiple instances
+/// If a component implements [`MergeComponent`], you can use this command to merge multiple instances
 /// of the component into one.
 ///
 /// ```rust
@@ -41,16 +33,16 @@ impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
 /// #[derive(Component, Default)]
 /// struct N(usize);
 ///
-/// impl AddComponent for N {
-///     fn add(&mut self, rhs: Self) {
-///         self.0 += rhs.0;
+/// impl MergeComponent for N {
+///     fn merge(&mut self, other: Self) {
+///         self.0 += other.0;
 ///     }
 /// }
 ///
 /// let mut world = World::new();
 /// let entity = world.spawn_empty().id();
-/// world.commands().entity(entity).queue(Add(N(1)));
-/// world.commands().entity(entity).queue(Add(N(2)));
+/// world.commands().entity(entity).queue(Merge(N(1)));
+/// world.commands().entity(entity).queue(Merge(N(2)));
 /// world.flush();
 /// let &N(value) = world.get(entity).unwrap();
 /// assert_eq!(value, 3);
@@ -66,30 +58,29 @@ impl<T: AddAssign + Component<Mutability = Mutable>> AddComponent for T {
 /// #[derive(Component, Default)]
 /// struct N(usize);
 ///
-/// impl AddComponent for N {
-///     fn add(&mut self, rhs: Self) {
-///         self.0 += rhs.0;
+/// impl MergeComponent for N {
+///     fn merge(&mut self, other: Self) {
+///         self.0 += other.0;
 ///     }
 /// }
 ///
 /// let mut world = World::new();
-/// let entity = world.spawn((N(1), Add(N(2))));
+/// let entity = world.spawn((N(1), Merge(N(2))));
 /// let &N(value) = entity.get().unwrap();
 /// assert_eq!(value, 3);
 /// ```
 ///
-/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
-/// However, because of the component uniqueness rule, multiple `Add<T>` instances may not exist on the same entity.
-///
-/// To work around this, you can use [`AddFrom`] and [`AddWith`].
+/// Because [`Merge<T>`] is a component itself, it can be used as a component requirement.
+/// However, because of the component uniqueness rule, multiple [`Merge<T>`] instances may not exist on the same entity.
+/// To work around this, you can use [`MergeFrom`] and [`MergeWith`].
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
-pub struct Add<T: AddComponent>(pub T);
+pub struct Merge<T: MergeComponent>(pub T);
 
-impl<T: AddComponent> Add<T> {
-    /// Ergonomic alias for [`AddWith::new`].
-    pub fn with<F: Static + FnOnce() -> T>(f: F) -> AddWith<T, impl Static + FnOnce() -> T> {
-        AddWith::new(f)
+impl<T: MergeComponent> Merge<T> {
+    /// Ergonomic alias for [`MergeWith::new`].
+    pub fn with<F: Static + FnOnce() -> T>(f: F) -> MergeWith<T, impl Static + FnOnce() -> T> {
+        MergeWith::new(f)
     }
 
     fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
@@ -102,27 +93,27 @@ impl<T: AddComponent> Add<T> {
     }
 }
 
-impl<T: AddComponent> From<T> for Add<T> {
+impl<T: MergeComponent> From<T> for Merge<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
 }
 
-impl<T: AddComponent> EntityCommand for Add<T> {
+impl<T: MergeComponent> EntityCommand for Merge<T> {
     fn apply(self, mut entity: EntityWorldMut) {
         let Self(source) = self;
         if let Some(mut target) = entity.get_mut::<T>() {
-            target.add(source);
+            target.merge(source);
         } else {
             entity.insert(source);
         }
     }
 }
 
-/// A [`Component`] which is used to add components as requirements.
+/// A [`Component`] which is used to merge components as requirements.
 ///
 /// # Usage
-/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
+/// Because [`Merge<T>`] is a component itself, it can be used as a component requirement.
 /// This type may instead be used to work around this restriction:
 ///
 /// ```rust
@@ -132,18 +123,18 @@ impl<T: AddComponent> EntityCommand for Add<T> {
 /// #[derive(Component, Default)]
 /// struct N(usize);
 ///
-/// impl AddComponent for N {
-///     fn add(&mut self, rhs: Self) {
-///         self.0 += rhs.0;
+/// impl MergeComponent for N {
+///     fn merge(&mut self, other: Self) {
+///         self.0 += other.0;
 ///     }
 /// }
 ///
 /// #[derive(Component, Default)]
-/// #[require(AddFrom<Self, N> = N(1))]
+/// #[require(MergeFrom<Self, N> = N(1))]
 /// struct A;
 ///
 /// #[derive(Component, Default)]
-/// #[require(A, AddFrom<Self, N> = N(2))]
+/// #[require(A, MergeFrom<Self, N> = N(2))]
 /// struct B;
 ///
 /// let mut world = World::new();
@@ -153,9 +144,9 @@ impl<T: AddComponent> EntityCommand for Add<T> {
 /// ```
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
-pub struct AddFrom<M: Static, T: AddComponent>(Add<T>, PhantomData<M>);
+pub struct MergeFrom<M: Static, T: MergeComponent>(Merge<T>, PhantomData<M>);
 
-impl<M: Static, T: AddComponent> AddFrom<M, T> {
+impl<M: Static, T: MergeComponent> MergeFrom<M, T> {
     fn on_insert(mut world: DeferredWorld, ctx: HookContext) {
         world
             .commands()
@@ -167,15 +158,15 @@ impl<M: Static, T: AddComponent> AddFrom<M, T> {
     }
 }
 
-impl<M: Static, T: AddComponent> From<T> for AddFrom<M, T> {
+impl<M: Static, T: MergeComponent> From<T> for MergeFrom<M, T> {
     fn from(value: T) -> Self {
-        Self(Add(value), PhantomData)
+        Self(Merge(value), PhantomData)
     }
 }
-/// A [`Component`] which is used to add components as requirements.
+/// A [`Component`] which is used to merge components as requirements.
 ///
 /// # Usage
-/// Because [`Add<T>`] is a component itself, it can be used as a component requirement.
+/// Because [`Merge<T>`] is a component itself, it can be used as a component requirement.
 /// This type may instead be used to work around this restriction:
 ///
 /// ```rust
@@ -185,25 +176,25 @@ impl<M: Static, T: AddComponent> From<T> for AddFrom<M, T> {
 /// #[derive(Component, Default)]
 /// struct N(usize);
 ///
-/// impl AddComponent for N {
-///     fn add(&mut self, rhs: Self) {
-///         self.0 += rhs.0;
+/// impl MergeComponent for N {
+///     fn merge(&mut self, other: Self) {
+///         self.0 += other.0;
 ///     }
 /// }
 ///
 /// let mut world = World::new();
-/// let entity = world.spawn((Add::with(|| N(1)), Add::with(|| N(2))));
+/// let entity = world.spawn((Merge::with(|| N(1)), Merge::with(|| N(2))));
 /// let &N(value) = entity.get().unwrap();
 /// assert_eq!(value, 3);
 /// ```
 #[derive(Component)]
 #[component(on_insert = Self::on_insert)]
-pub struct AddWith<T: AddComponent, F: Static + FnOnce() -> T>(F, PhantomData<T>);
+pub struct MergeWith<T: MergeComponent, F: Static + FnOnce() -> T>(F, PhantomData<T>);
 
-impl<F: Static + FnOnce() -> T, T: AddComponent> AddWith<T, F> {
-    /// Creates a new [`AddWith`] [`Component`] for the given [`FnOnce`].
+impl<F: Static + FnOnce() -> T, T: MergeComponent> MergeWith<T, F> {
+    /// Creates a new [`MergeWith`] [`Component`] for the given [`FnOnce`].
     ///
-    /// See [`Add::with`] for a more ergonomic constructor.
+    /// See [`Merge::with`] for a more ergonomic constructor.
     pub fn new(f: F) -> Self {
         Self(f, PhantomData)
     }
@@ -214,12 +205,12 @@ impl<F: Static + FnOnce() -> T, T: AddComponent> AddWith<T, F> {
             .entity(ctx.entity)
             .queue(|mut entity: EntityWorldMut| {
                 let Self(f, ..) = entity.take::<Self>().unwrap();
-                Add(f()).apply(entity);
+                Merge(f()).apply(entity);
             });
     }
 }
 
-impl<F: Static + FnOnce() -> T, T: AddComponent> From<F> for AddWith<T, F> {
+impl<F: Static + FnOnce() -> T, T: MergeComponent> From<F> for MergeWith<T, F> {
     fn from(f: F) -> Self {
         Self::new(f)
     }
@@ -285,22 +276,22 @@ macro_rules! relationship {
 }
 
 #[test]
-fn test_add_component() {
+fn test_merge_component() {
     #[derive(Component, Default)]
     struct N(usize);
 
-    impl AddAssign for N {
-        fn add_assign(&mut self, rhs: Self) {
-            self.0 += rhs.0;
+    impl MergeComponent for N {
+        fn merge(&mut self, other: Self) {
+            self.0 += other.0;
         }
     }
 
     #[derive(Component, Default)]
-    #[require(AddFrom<Self, N> = N(1))]
+    #[require(MergeFrom<Self, N> = N(1))]
     struct A;
 
     #[derive(Component, Default)]
-    #[require(A, AddFrom<Self, N> = N(2))]
+    #[require(A, MergeFrom<Self, N> = N(2))]
     struct B;
 
     #[derive(Component, Default)]
