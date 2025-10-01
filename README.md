@@ -68,7 +68,7 @@ struct B;
 
 In this context, [`Expect<T>`] will panic if `B` is ever inserted into an entity without `A`.
 
-### [`Get<T>`] and [`FromQuery`]
+### [`Get<T>`] and [`MapQuery`]
 
 An ergonomic and generic way to process repetitive query patterns:
 
