@@ -139,8 +139,8 @@ fn find_needle(
 
 Some useful functions include:
 
-- [`fn parent(&self, Entity) -> Option<Entity>`](https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html#method.parent)
-- [`fn children(&self, Entity) -> Iterator<Item = Entity>`](https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html#method.children)
+- `fn parent(&self, Entity) -> Option<Entity>`
+- `fn children(&self, Entity) -> Iterator<Item = Entity>`
 - `fn ancestors(&self, Entity) -> Iterator<Item = Entity>`
 - `fn descendants_wide(&self, Entity) -> Iterator<Item = Entity>`
 - `fn descendants_deep(&self, Entity) -> Iterator<Item = Entity>`
