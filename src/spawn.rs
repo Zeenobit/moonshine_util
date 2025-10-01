@@ -6,7 +6,7 @@ use bevy_ecs::world::DeferredWorld;
 
 use crate::Static;
 
-/// This [`Component`] is similar to [`SpawnWith`](bevy_ecs::spawn::SpawnWith), but it spawns the
+/// This [`Component`] is similar to [`SpawnWith`], but it spawns the
 /// associated entity without any [`Relationship`](bevy_ecs::relationship::Relationship).
 #[derive(Component)]
 #[component(storage = "SparseSet")]
