@@ -158,15 +158,17 @@ use bevy::prelude::*;
 use moonshine_util::diagnostics::RunSystemLoop;
 
 let mut world = World::new();
-let outputs = world.run_system_loop(2, |mut commands: Commands| {
+let results = world.run_system_loop(2, |mut commands: Commands| {
     commands.spawn_empty().id()
 });
 
-assert_eq!(outputs.len(), 2);
 
-let mut it = outputs.into_iter().map(Result::unwrap);
+// Output is the result of each system run
+let mut it = results.into_iter().map(Result::unwrap);
+
 assert!(world.get_entity(it.next().unwrap()).is_ok());
 assert!(world.get_entity(it.next().unwrap()).is_ok());
+assert!(it.next().is_none());
 ```
 
 ### [`SingleEvent`]
@@ -226,7 +228,7 @@ You may also contact me on the official [Bevy Discord](https://discord.gg/bevy) 
 
 [`Expect<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/expect/struct.Expect.html
 [`Get<T>`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/struct.Get.html
-[`FromQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/trait.FromQuery.html
+[`MapQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/query/trait.MapQuery.html
 [`HierarchyQuery`]:https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html
 [`RunSystemLoop`]:https://docs.rs/moonshine-util/latest/moonshine_util/diagnostics/trait.RunSystemLoop.html
-[`SingleEvent`]:https://docs.rs/moonshine-util/latest/moonshine_util/event/struct.SingleEvent.html
+[`SingleEvent`]:https://docs.rs/moonshine-util/latest/moonshine_util/event/trait.SingleEvent.html
