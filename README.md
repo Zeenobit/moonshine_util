@@ -139,8 +139,8 @@ fn find_needle(
 
 Some useful functions include:
 
-- `fn parent(&self, Entity) -> Option<Entity>`
-- `fn children(&self, Entity) -> Iterator<Item = Entity>`
+- [`fn parent(&self, Entity) -> Option<Entity>`](https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html#method.parent)
+- [`fn children(&self, Entity) -> Iterator<Item = Entity>`](https://docs.rs/moonshine-util/latest/moonshine_util/hierarchy/struct.HierarchyQuery.html#method.children)
 - `fn ancestors(&self, Entity) -> Iterator<Item = Entity>`
 - `fn descendants_wide(&self, Entity) -> Iterator<Item = Entity>`
 - `fn descendants_deep(&self, Entity) -> Iterator<Item = Entity>`
@@ -213,12 +213,6 @@ A growing collection of simple and generic systems useful for constructing large
 See [documentation](https://docs.rs/moonshine-util/latest/moonshine_util/system/index.html) for details and usage examples.
 
 This crate is also included as part of [🍸 Moonshine Core](https://github.com/Zeenobit/moonshine_core).
-
-## Changes
-
-### Version 0.3.2
-
-- Added [`SingleEvent`] feature
 
 ## Support
 
