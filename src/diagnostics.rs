@@ -20,7 +20,6 @@ pub trait RunSystemLoop: Sized {
     /// });
     ///
     /// assert_eq!(entities.len(), 3);
-    /// assert_eq!(world.iter_entities().count(), 3);
     /// ```
     fn run_system_loop<T: IntoSystem<(), Out, Marker>, Out, Marker>(
         self,

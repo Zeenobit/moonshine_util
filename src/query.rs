@@ -134,7 +134,7 @@ unsafe impl<T: MapQuery> QueryData for Get<T> {
         entity: Entity,
         table_row: TableRow,
     ) -> Option<Self::Item<'w, 's>> {
-        T::Query::fetch(state, fetch, entity, table_row).and_then(|data| Some(T::map(data)))
+        T::Query::fetch(state, fetch, entity, table_row).map(T::map)
     }
 
     fn iter_access(
