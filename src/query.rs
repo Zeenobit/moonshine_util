@@ -3,7 +3,8 @@
 use std::marker::PhantomData;
 
 use bevy_ecs::archetype::Archetype;
-use bevy_ecs::component::{ComponentId, Components, Tick};
+use bevy_ecs::change_detection::Tick;
+use bevy_ecs::component::{ComponentId, Components};
 use bevy_ecs::prelude::*;
 use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
@@ -117,6 +118,8 @@ unsafe impl<T: MapQuery> QueryData for Get<T> {
 
     const IS_READ_ONLY: bool = <T::Query as QueryData>::IS_READ_ONLY;
 
+    const IS_ARCHETYPAL: bool = <T::Query as QueryData>::IS_ARCHETYPAL;
+
     type Item<'w, 's> = T::Output;
 
     fn shrink<'wlong: 'wshort, 'wshort, 's>(
@@ -130,8 +133,14 @@ unsafe impl<T: MapQuery> QueryData for Get<T> {
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w, 's> {
-        T::map(T::Query::fetch(state, fetch, entity, table_row))
+    ) -> Option<Self::Item<'w, 's>> {
+        T::Query::fetch(state, fetch, entity, table_row).and_then(|data| Some(T::map(data)))
+    }
+
+    fn iter_access(
+        state: &Self::State,
+    ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+        T::Query::iter_access(state)
     }
 }
 

@@ -3,7 +3,8 @@
 use std::marker::PhantomData;
 
 use bevy_ecs::archetype::Archetype;
-use bevy_ecs::component::{ComponentId, Components, Immutable, StorageType, Tick};
+use bevy_ecs::change_detection::Tick;
+use bevy_ecs::component::{ComponentId, Components, Immutable, StorageType};
 use bevy_ecs::lifecycle::{ComponentHook, HookContext};
 use bevy_ecs::prelude::*;
 use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
@@ -242,6 +243,8 @@ unsafe impl<T: QueryData> QueryData for Expect<T> {
 
     const IS_READ_ONLY: bool = true;
 
+    const IS_ARCHETYPAL: bool = T::IS_ARCHETYPAL;
+
     type Item<'w, 's> = T::Item<'w, 's>;
 
     fn shrink<'wlong: 'wshort, 'wshort, 's>(
@@ -255,19 +258,24 @@ unsafe impl<T: QueryData> QueryData for Expect<T> {
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w, 's> {
-        let item = fetch
-            .matches
-            .then(|| T::fetch(state, &mut fetch.fetch, entity, table_row));
-        if let Some(item) = item {
-            item
-        } else {
+    ) -> Option<Self::Item<'w, 's>> {
+        if !fetch.matches {
             panic!(
                 "expected query of type `{}` does not match entity {:?}",
                 std::any::type_name::<T>(),
                 entity
             );
         }
+        fetch
+            .matches
+            .then(|| T::fetch(state, &mut fetch.fetch, entity, table_row))
+            .flatten()
+    }
+
+    fn iter_access(
+        state: &Self::State,
+    ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+        T::iter_access(state)
     }
 }
 
