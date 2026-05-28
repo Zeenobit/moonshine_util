@@ -223,8 +223,11 @@ impl<F: Static + FnOnce() -> T, T: MergeComponent> From<F> for MergeWith<T, F> {
 /// use moonshine_util::prelude::*;
 ///
 /// relationship! {
-///     #[derive(Default)]
-///     pub Friends(Vec<Entity>) -> { pub FriendOf(pub Entity) }
+///     #[derive(Component, Default)]
+///     pub struct Friends(Vec<Entity>) -> {
+///         #[derive(Component)]
+///         pub struct FriendOf(pub Entity)
+///     }
 /// }
 ///
 /// let mut w = World::new();
@@ -242,34 +245,32 @@ impl<F: Static + FnOnce() -> T, T: MergeComponent> From<F> for MergeWith<T, F> {
 macro_rules! relationship {
     {
         $(#[$target_attr:meta])*
-        $target_vis:vis $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
+        $target_vis:vis struct $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
         -> {
             $(#[$source_attr:meta])*
-            $source_vis:vis $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
+            $source_vis:vis struct $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
         }
     } => {
         relationship! {
-            $(#[$target_attr])* $target_vis $target($target_inner_vis $target_inner) -> [] {
-                $(#[$source_attr])* $source_vis $source($source_inner_vis $source_inner)
+            $(#[$target_attr])* $target_vis struct $target($target_inner_vis $target_inner) -> [] {
+                $(#[$source_attr])* $source_vis struct $source($source_inner_vis $source_inner)
             }
         }
     };
 
     {
         $(#[$target_attr:meta])*
-        $target_vis:vis $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
+        $target_vis:vis struct $target:ident($(#[$target_inner_attr:meta])* $target_inner_vis:vis $target_inner:ty)
         -> [$($options:expr),*] {
             $(#[$source_attr:meta])*
-            $source_vis:vis $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
+            $source_vis:vis struct $source:ident($(#[$source_inner_attr:meta])* $source_inner_vis:vis $source_inner:ty)
         }
     } => {
         $(#[$target_attr])*
-        #[derive(Component)]
         #[relationship_target(relationship = $source, $($options),*)]
         $target_vis struct $target($(#[$target_inner_attr])* $target_inner_vis $target_inner);
 
         $(#[$source_attr])*
-        #[derive(Component)]
         #[relationship(relationship_target = $target)]
         $source_vis struct $source($(#[$source_inner_attr])* $source_inner_vis $source_inner);
     };
@@ -308,8 +309,10 @@ fn test_merge_component() {
 #[test]
 fn test_relationship_linked_spawn() {
     relationship! {
-        pub Owner(Vec<Entity>) -> [linked_spawn] {
-            pub OwnedBy(pub Entity)
+        #[derive(Component)]
+        pub struct Owner(Vec<Entity>) -> [linked_spawn] {
+            #[derive(Component)]
+            pub struct OwnedBy(pub Entity)
         }
     }
 
