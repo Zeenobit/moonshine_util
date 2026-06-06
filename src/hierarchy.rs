@@ -1,23 +1,25 @@
 //! Utilities related to relationship hierarchy traversal.
 
+use std::collections::VecDeque;
+use std::marker::PhantomData;
+
 use bevy_ecs::prelude::*;
+use bevy_ecs::relationship::{Relationship, SourceIter};
 use bevy_ecs::system::SystemParam;
 
 /// A [`SystemParam`] for ergonomic [`Entity`] hierarchy traversal.
 #[derive(SystemParam)]
-pub struct HierarchyQuery<'w, 's> {
-    parent: Query<'w, 's, &'static ChildOf>,
-    children: Query<'w, 's, &'static Children>,
+pub struct HierarchyQuery<'w, 's, R: Relationship = ChildOf> {
+    parent: Query<'w, 's, &'static R>,
+    children: Query<'w, 's, &'static <R as Relationship>::RelationshipTarget>,
 }
 
-// TODO: Support for generic relationship hierarchies
-
-impl HierarchyQuery<'_, '_> {
+impl<R: Relationship> HierarchyQuery<'_, '_, R> {
     /// Returns the parent of the given entity, if it has one.
     ///
     /// See [`ChildOf`] for more information.
     pub fn parent(&self, entity: Entity) -> Option<Entity> {
-        self.parent.get(entity).ok().map(|parent| parent.0)
+        self.parent.get(entity).ok().map(|parent| parent.get())
     }
 
     /// Iterates over the children of the given entity.
@@ -28,7 +30,7 @@ impl HierarchyQuery<'_, '_> {
             .get(entity)
             .ok()
             .into_iter()
-            .flat_map(|children| children.into_iter().copied())
+            .flat_map(|children| children.iter())
     }
 
     /// Iterates over the ancestors of the given `entity`.
@@ -48,38 +50,46 @@ impl HierarchyQuery<'_, '_> {
     /// Iterates over the descendants of the given `entity` in depth-first order.
     ///
     /// See [`Query::iter_descendants_depth_first`] for more information.
-    pub fn descendants_deep(&self, entity: Entity) -> impl Iterator<Item = Entity> + '_ {
+    pub fn descendants_deep<'a>(&'a self, entity: Entity) -> impl Iterator<Item = Entity> + 'a
+    where
+        SourceIter<'a, R::RelationshipTarget>: DoubleEndedIterator,
+    {
         self.children.iter_descendants_depth_first(entity)
     }
 }
 
-/// Iterator for breadth-first traversal of descendants
-pub struct WorldDescendantsWideIter<'w> {
+/// Iterator for breadth-first traversal of descendants.
+pub struct WorldDescendantsWideIter<'w, R: Relationship = ChildOf> {
     world: &'w World,
-    queue: std::collections::VecDeque<Entity>,
+    queue: VecDeque<Entity>,
+    _marker: PhantomData<R>,
 }
 
-impl<'w> WorldDescendantsWideIter<'w> {
+impl<'w, R: Relationship> WorldDescendantsWideIter<'w, R> {
     /// Creates a new [`WorldDescendantsWideIter`] to iterate over all descendants of the given
     /// [`Entity`] in breadth-first order.
     pub fn new(world: &'w World, root: Entity) -> Self {
-        let mut queue = std::collections::VecDeque::new();
+        let mut queue = VecDeque::new();
 
-        if let Some(children) = world.get::<Children>(root) {
+        if let Some(children) = world.get::<R::RelationshipTarget>(root) {
             queue.extend(children.iter());
         }
 
-        Self { world, queue }
+        Self {
+            world,
+            queue,
+            _marker: PhantomData,
+        }
     }
 }
 
-impl Iterator for WorldDescendantsWideIter<'_> {
+impl<R: Relationship> Iterator for WorldDescendantsWideIter<'_, R> {
     type Item = Entity;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.queue.pop_front()?;
 
-        if let Some(children) = self.world.get::<Children>(current) {
+        if let Some(children) = self.world.get::<R::RelationshipTarget>(current) {
             self.queue.extend(children.iter());
         }
 
@@ -87,34 +97,41 @@ impl Iterator for WorldDescendantsWideIter<'_> {
     }
 }
 
-/// Iterator for depth-first traversal of descendants
-pub struct WorldDescendantsDeepIter<'w> {
+/// Iterator for depth-first traversal of descendants.
+pub struct WorldDescendantsDeepIter<'w, R: Relationship = ChildOf> {
     world: &'w World,
     stack: Vec<Entity>,
+    _marker: PhantomData<R>,
 }
 
-impl<'w> WorldDescendantsDeepIter<'w> {
+impl<'w, R: Relationship> WorldDescendantsDeepIter<'w, R> {
     /// Creates a new [`WorldDescendantsDeepIter`] to iterate over all descendants of the given
     /// [`Entity`] in depth-first order.
     pub fn new(world: &'w World, root: Entity) -> Self {
         let mut stack = Vec::new();
 
-        if let Some(children) = world.get::<Children>(root) {
-            stack.extend(children.iter().rev());
+        if let Some(children) = world.get::<R::RelationshipTarget>(root) {
+            let children: Vec<Entity> = children.iter().collect();
+            stack.extend(children.into_iter().rev());
         }
 
-        Self { world, stack }
+        Self {
+            world,
+            stack,
+            _marker: PhantomData,
+        }
     }
 }
 
-impl Iterator for WorldDescendantsDeepIter<'_> {
+impl<R: Relationship> Iterator for WorldDescendantsDeepIter<'_, R> {
     type Item = Entity;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.stack.pop()?;
 
-        if let Some(children) = self.world.get::<Children>(current) {
-            self.stack.extend(children.iter().rev());
+        if let Some(children) = self.world.get::<R::RelationshipTarget>(current) {
+            let children: Vec<Entity> = children.iter().collect();
+            self.stack.extend(children.into_iter().rev());
         }
 
         Some(current)
@@ -242,7 +259,7 @@ mod tests {
             })
             .id();
 
-        let r: Vec<_> = WorldDescendantsWideIter::new(&w, entity)
+        let r: Vec<_> = WorldDescendantsWideIter::<ChildOf>::new(&w, entity)
             .filter_map(|entity| w.get::<A>(entity))
             .map(|&A(v)| v)
             .collect();
@@ -309,7 +326,7 @@ mod tests {
             })
             .id();
 
-        let r: Vec<_> = WorldDescendantsDeepIter::new(&w, entity)
+        let r: Vec<_> = WorldDescendantsDeepIter::<ChildOf>::new(&w, entity)
             .filter_map(|entity| w.get::<A>(entity))
             .map(|&A(v)| v)
             .collect();
