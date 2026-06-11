@@ -256,12 +256,9 @@ pub fn replace_components_with<T: Component>(
 /// assert_eq!(app.world().entity(a).get::<T>().unwrap(), &T(42));
 /// assert_eq!(app.world().entity(b).get::<T>().unwrap(), &T(0));
 /// ```
-pub fn filter_replace_components<F: QueryFilter, T: Component + Clone>(
+pub fn filter_replace_components<F: 'static + QueryFilter, T: Component + Clone>(
     new: T,
-) -> impl System<In = (), Out = ()>
-where
-    F: 'static,
-{
+) -> impl System<In = (), Out = ()> {
     IntoSystem::into_system(
         move |query: Query<Entity, (With<T>, F)>, mut commands: Commands| {
             for entity in &query {
@@ -295,12 +292,9 @@ where
 /// assert_eq!(app.world().entity(a).get::<T>().unwrap(), &T(42));
 /// assert_eq!(app.world().entity(b).get::<T>().unwrap(), &T(0));
 /// ```
-pub fn filter_replace_components_with<F: QueryFilter, T: Component>(
+pub fn filter_replace_components_with<F: 'static + QueryFilter, T: Component>(
     new: impl Static + Fn() -> T,
-) -> impl System<In = (), Out = ()>
-where
-    F: 'static,
-{
+) -> impl System<In = (), Out = ()> {
     IntoSystem::into_system(
         move |query: Query<Entity, (With<T>, F)>, mut commands: Commands| {
             for entity in &query {
