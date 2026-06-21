@@ -99,7 +99,9 @@ impl<T: Component> Expect<T> {
         world.commands().queue(move |world: &mut World| {
             let expect = world.entity_mut(ctx.entity).take::<Self>().unwrap();
             let entity = world.entity(ctx.entity);
-            if world.contains_resource::<ExpectDeferredWorld>() || entity.contains::<ExpectDeferredEntity>() {
+            if world.contains_resource::<ExpectDeferredWorld>()
+                || entity.contains::<ExpectDeferredEntity>()
+            {
                 let mut buffer = world.get_resource_or_init::<ExpectDeferredBuffer>();
                 buffer.add(ctx.entity, Box::new(expect));
             } else {
@@ -190,7 +192,10 @@ impl ExpectDeferredEntity {
 }
 
 /// Alias for [`ExpectDeferredEntity`] for backwards compatibility.
-#[deprecated(since = "0.5.0", note = "use `ExpectDeferredEntity` or `ExpectDeferredWorld` instead")]
+#[deprecated(
+    since = "0.5.0",
+    note = "use `ExpectDeferredEntity` or `ExpectDeferredWorld` instead"
+)]
 pub type ExpectDeferred = ExpectDeferredEntity;
 
 #[derive(Resource, Default)]
