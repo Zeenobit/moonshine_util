@@ -6,7 +6,7 @@ use bevy_ecs::archetype::Archetype;
 use bevy_ecs::change_detection::Tick;
 use bevy_ecs::component::{ComponentId, Components};
 use bevy_ecs::prelude::*;
-use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
+use bevy_ecs::query::{FilteredAccess, IterQueryData, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
 
 /// A trait for types that can be constructed from query data.
@@ -143,5 +143,7 @@ unsafe impl<T: MapQuery> QueryData for Get<T> {
         T::Query::iter_access(state)
     }
 }
+
+unsafe impl<T: MapQuery> IterQueryData for Get<T> {}
 
 unsafe impl<T: MapQuery> ReadOnlyQueryData for Get<T> {}

@@ -7,7 +7,7 @@ use bevy_ecs::change_detection::Tick;
 use bevy_ecs::component::{ComponentId, Components, Immutable, StorageType};
 use bevy_ecs::lifecycle::{ComponentHook, HookContext};
 use bevy_ecs::prelude::*;
-use bevy_ecs::query::{FilteredAccess, QueryData, ReadOnlyQueryData, WorldQuery};
+use bevy_ecs::query::{FilteredAccess, IterQueryData, QueryData, ReadOnlyQueryData, WorldQuery};
 use bevy_ecs::storage::{Table, TableRow};
 use bevy_ecs::world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld};
 use bevy_platform::collections::HashMap;
@@ -99,7 +99,7 @@ impl<T: Component> Expect<T> {
         world.commands().queue(move |world: &mut World| {
             let expect = world.entity_mut(ctx.entity).take::<Self>().unwrap();
             let entity = world.entity(ctx.entity);
-            if world.contains_resource::<ExpectDeferred>() || entity.contains::<ExpectDeferred>() {
+            if world.contains_resource::<ExpectDeferredWorld>() || entity.contains::<ExpectDeferredEntity>() {
                 let mut buffer = world.get_resource_or_init::<ExpectDeferredBuffer>();
                 buffer.add(ctx.entity, Box::new(expect));
             } else {
@@ -150,9 +150,6 @@ impl<T: Component> ExpectValidate for Expect<T> {
 ///
 /// This [`Resource`] solves this problem by deferring all [`Expect`] requirement checks until [`expect_deferred`] is called.
 ///
-/// You may also use [`ExpectDeferred`] as a [`Component`]. Doing so will defer all [`Expect`] checks until
-/// `ExpectDeferred` is removed from that [`Entity`].
-///
 /// # Usage
 ///
 /// You may run [`expect_deferred`] as a system, or invoke it manually as required.
@@ -160,11 +157,20 @@ impl<T: Component> ExpectValidate for Expect<T> {
 /// If you are using [Moonshine Save](https://crates.io/crates/moonshine-save),
 /// [`LoadWorld`](https://docs.rs/moonshine-save/latest/moonshine_save/load/struct.LoadWorld.html)
 /// manages this automatically.
-#[derive(Resource, Component, Default)]
-#[component(on_remove = Self::on_remove)]
-pub struct ExpectDeferred;
+#[derive(Resource, Default)]
+pub struct ExpectDeferredWorld;
 
-impl ExpectDeferred {
+/// When making targeted changes to a specific entity, you may use this [`Component`] to defer
+/// all [`Expect`] requirement checks until `ExpectDeferredEntity` is removed from that [`Entity`].
+///
+/// # Usage
+///
+/// See [`ExpectDeferredWorld`] for usage details.
+#[derive(Component, Default)]
+#[component(on_remove = Self::on_remove)]
+pub struct ExpectDeferredEntity;
+
+impl ExpectDeferredEntity {
     fn on_remove(mut world: DeferredWorld, ctx: HookContext) {
         world.commands().queue(move |world: &mut World| {
             let Some(mut buffer) = world.get_resource_mut::<ExpectDeferredBuffer>() else {
@@ -182,6 +188,10 @@ impl ExpectDeferred {
         });
     }
 }
+
+/// Alias for [`ExpectDeferredEntity`] for backwards compatibility.
+#[deprecated(since = "0.5.0", note = "use `ExpectDeferredEntity` or `ExpectDeferredWorld` instead")]
+pub type ExpectDeferred = ExpectDeferredEntity;
 
 #[derive(Resource, Default)]
 struct ExpectDeferredBuffer(HashMap<Entity, Vec<Box<dyn ExpectValidate>>>);
@@ -211,7 +221,7 @@ pub fn expect_deferred(world: &mut World) {
             continue;
         };
 
-        if entity.contains::<ExpectDeferred>() {
+        if entity.contains::<ExpectDeferredEntity>() {
             continue;
         }
 
@@ -220,7 +230,7 @@ pub fn expect_deferred(world: &mut World) {
         }
     }
 
-    let _ = world.remove_resource::<ExpectDeferred>();
+    let _ = world.remove_resource::<ExpectDeferredWorld>();
 }
 
 #[doc(hidden)]
@@ -278,6 +288,8 @@ unsafe impl<T: QueryData> QueryData for Expect<T> {
         T::iter_access(state)
     }
 }
+
+unsafe impl<T: ReadOnlyQueryData> IterQueryData for Expect<T> {}
 
 unsafe impl<T: ReadOnlyQueryData> ReadOnlyQueryData for Expect<T> {}
 
@@ -389,8 +401,8 @@ mod tests {
         struct C;
 
         let mut w = World::default();
-        let e = w.spawn((ExpectDeferred, C)).id();
-        w.entity_mut(e).insert(B).remove::<ExpectDeferred>();
+        let e = w.spawn((ExpectDeferredEntity, C)).id();
+        w.entity_mut(e).insert(B).remove::<ExpectDeferredEntity>();
     }
 
     #[test]
@@ -401,7 +413,7 @@ mod tests {
         struct C;
 
         let mut w = World::default();
-        let e = w.spawn((ExpectDeferred, C)).id();
-        w.entity_mut(e).remove::<ExpectDeferred>();
+        let e = w.spawn((ExpectDeferredEntity, C)).id();
+        w.entity_mut(e).remove::<ExpectDeferredEntity>();
     }
 }

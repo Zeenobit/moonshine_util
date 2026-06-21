@@ -100,6 +100,8 @@ impl<T: MergeComponent> From<T> for Merge<T> {
 }
 
 impl<T: MergeComponent> EntityCommand for Merge<T> {
+    type Out = ();
+
     fn apply(self, mut entity: EntityWorldMut) {
         let Self(source) = self;
         if let Some(mut target) = entity.get_mut::<T>() {
