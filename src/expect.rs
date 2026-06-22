@@ -294,7 +294,7 @@ unsafe impl<T: QueryData> QueryData for Expect<T> {
     }
 }
 
-unsafe impl<T: ReadOnlyQueryData> IterQueryData for Expect<T> {}
+unsafe impl<T: IterQueryData> IterQueryData for Expect<T> {}
 
 unsafe impl<T: ReadOnlyQueryData> ReadOnlyQueryData for Expect<T> {}
 
