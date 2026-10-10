@@ -365,6 +365,19 @@ unsafe impl<T: QueryData> WorldQuery for Expect<T> {
     ) -> bool {
         true
     }
+
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut bevy_ecs::query::FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+        T::init_nested_access(state, system_name, component_access_set, world)
+    }
+
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {
+        T::update_archetypes(state, world)
+    }
 }
 
 #[cfg(test)]

@@ -35,9 +35,9 @@ pub trait AddSingleObserver {
     ///
     /// # Panic
     /// This will panic if an observer for the same event is already registered.
-    fn add_single_observer<E: SingleEvent, B: Bundle, M>(
+    fn add_single_observer<E: SingleEvent, M>(
         self,
-        observer: impl IntoSingleObserverSystem<E, B, M>,
+        observer: impl IntoSingleObserverSystem<E, M>,
     ) -> Self;
 }
 
@@ -46,9 +46,9 @@ impl AddSingleObserver for &mut App {
         self.is_plugin_added::<SingleEventObserverPlugin<E>>()
     }
 
-    fn add_single_observer<E: SingleEvent, B: Bundle, M>(
+    fn add_single_observer<E: SingleEvent, M>(
         self,
-        observer: impl IntoSingleObserverSystem<E, B, M>,
+        observer: impl IntoSingleObserverSystem<E, M>,
     ) -> Self {
         if !self.is_plugin_added::<SingleEventObserverPlugin<E>>() {
             self.add_plugins(SingleEventObserverPlugin::<E>::new());
@@ -84,13 +84,13 @@ impl TriggerSingle for &mut World {
 }
 
 #[doc(hidden)]
-pub trait IntoSingleObserverSystem<E: SingleEvent, B: Bundle, M>:
-    IntoObserverSystem<SingleEventWrapper<E>, B, M>
+pub trait IntoSingleObserverSystem<E: SingleEvent, M>:
+    IntoObserverSystem<SingleEventWrapper<E>, M>
 {
 }
 
-impl<E: SingleEvent, B: Bundle, M, S> IntoSingleObserverSystem<E, B, M> for S where
-    S: IntoObserverSystem<SingleEventWrapper<E>, B, M>
+impl<E: SingleEvent, M, S> IntoSingleObserverSystem<E, M> for S where
+    S: IntoObserverSystem<SingleEventWrapper<E>, M>
 {
 }
 
@@ -116,7 +116,7 @@ impl<E: SingleEvent> SingleEventWrapper<E> {
 /// Trigger for [`SingleEvent`] types.
 ///
 /// Usage is identical to [`On`] but with the addition of the [`consume`](SingleEventWrapper::consume) method.
-pub type OnSingle<'w, 't, E, B = ()> = On<'w, 't, SingleEventWrapper<E>, B>;
+pub type OnSingle<'w, 't, E> = On<'w, 't, SingleEventWrapper<E>>;
 
 #[doc(hidden)]
 pub struct SingleEventObserverPlugin<E: SingleEvent>(PhantomData<E>);

@@ -6,8 +6,11 @@ use bevy_ecs::archetype::Archetype;
 use bevy_ecs::change_detection::Tick;
 use bevy_ecs::component::{ComponentId, Components};
 use bevy_ecs::prelude::*;
-use bevy_ecs::query::{FilteredAccess, IterQueryData, QueryData, ReadOnlyQueryData, WorldQuery};
+use bevy_ecs::query::{
+    FilteredAccess, FilteredAccessSet, IterQueryData, QueryData, ReadOnlyQueryData, WorldQuery,
+};
 use bevy_ecs::storage::{Table, TableRow};
+use bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell;
 
 /// A trait for types that can be constructed from query data.
 ///
@@ -70,7 +73,7 @@ unsafe impl<T: MapQuery> WorldQuery for Get<T> {
     }
 
     unsafe fn init_fetch<'w>(
-        world: bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell<'w>,
+        world: UnsafeWorldCell<'w>,
         state: &Self::State,
         last_run: Tick,
         this_run: Tick,
@@ -110,6 +113,19 @@ unsafe impl<T: MapQuery> WorldQuery for Get<T> {
         set_contains_id: &impl Fn(ComponentId) -> bool,
     ) -> bool {
         T::Query::matches_component_set(state, set_contains_id)
+    }
+
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+        T::Query::init_nested_access(state, system_name, component_access_set, world)
+    }
+
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {
+        T::Query::update_archetypes(state, world)
     }
 }
 
