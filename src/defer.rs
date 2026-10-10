@@ -138,7 +138,7 @@ impl<S: ScheduleLabel> Default for DeferredSystems<S> {
 
 impl<S: ScheduleLabel> DeferredSystems<S> {
     fn take(&mut self) -> Self {
-        Self(self.0.drain(..).collect(), PhantomData)
+        Self(std::mem::take(&mut self.0), PhantomData)
     }
 
     fn run(self, world: &mut World) {
